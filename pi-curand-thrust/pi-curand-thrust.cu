@@ -8,7 +8,13 @@
 #include <iostream>
 #include <iomanip>
 
+#include <time.h>
+
 // we could vary M & N to find the perf sweet spot
+#define TRIALS_PER_THREAD 4096
+#define BLOCKS 256
+#define THREADS 256
+#define PI 3.1415926535  // known value of pi
 
 struct estimate_pi : 
     public thrust::unary_function<unsigned int, float>
@@ -17,7 +23,7 @@ struct estimate_pi :
   float operator()(unsigned int thread_id)
   {
     float sum = 0;
-    unsigned int N = 4096; // samples per thread
+    unsigned int N = TRIALS_PER_THREAD; // samples per thread
 
     unsigned int seed = thread_id;
 
@@ -52,7 +58,14 @@ struct estimate_pi :
 int main(void)
 {
   // use 30K independent seeds
-  int M = 256*256;
+  int M = BLOCKS*THREADS;
+  clock_t start, stop;
+  
+
+  std::cout << "# of trials per thread = "<< TRIALS_PER_THREAD <<" # of blocks * # of threads/block = " 
+            << BLOCKS*THREADS << std::endl;
+
+  start = clock();
 
   float estimate = thrust::transform_reduce(
         thrust::counting_iterator<int>(0),
@@ -62,8 +75,13 @@ int main(void)
         thrust::plus<float>());
   estimate /= M;
 
-  std::cout << std::setprecision(4);
-  std::cout << "pi is approximately ";
+  stop = clock();
+
+  std::cout << std::setprecision(7);
+  std::cout << "THRUST pi calculated in "<< (stop-start)/(float)CLOCKS_PER_SEC) << " s."<< std::endl;
+
+  std::cout << "CUDA estimate of PI = " << estimate << " [error of " << estimate - PI << "]" << std::endl;
+  
   std::cout << estimate << std::endl;
   return 0;
 }
