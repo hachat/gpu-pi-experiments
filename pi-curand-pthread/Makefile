@@ -75,7 +75,7 @@ GCC             ?= g++
 
 # Extra user flags
 EXTRA_NVCCFLAGS ?= -Wall -O3
-EXTRA_LDFLAGS   ?=
+EXTRA_LDFLAGS   ?= -L./../lib -lprng
 
 # CUDA code generation flags
 GENCODE_SM10    := -gencode arch=compute_10,code=sm_10
@@ -89,7 +89,7 @@ ifneq ($(DARWIN),)
       CCFLAGS   := -arch $(OS_ARCH) 
 else
   ifeq ($(OS_SIZE),32)
-      LDFLAGS   := -L$(CUDA_LIB_PATH) -lcuda -lcudart
+      LDFLAGS   := -L$(CUDA_LIB_PATH) -lcuda -lcudart 
       CCFLAGS   := -m32
   else
       LDFLAGS   := -L$(CUDA_LIB_PATH) -lcuda -lcudart
@@ -114,7 +114,7 @@ else
 endif
 
 # Common includes and paths for CUDA
-INCLUDES      := -I$(CUDA_INC_PATH) -I. -I$(CUDA_PATH)/samples/common/inc
+INCLUDES      := -I$(CUDA_INC_PATH) -I. -I$(CUDA_PATH)/samples/common/inc -I./../lib
 
 # Target rules
 all: build
