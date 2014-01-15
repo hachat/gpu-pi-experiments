@@ -10,7 +10,7 @@
 #include <time.h>
 #include <curand_kernel.h>
 #include <pthread.h>
-#include <prng.h>
+//#include <prng.h>
 
 #define TRIALS_PER_THREAD 4096
 #define BLOCKS 256
@@ -59,17 +59,17 @@ typedef struct{
 
 
 void * parallel_monte_carlo_try(void * arg){
-	struct prng *g;
+	//struct prng *g;
 	try_arg_t *args = (try_arg_t *)arg;
 	long trials = args->ncount;
 	
-	if(args->rng_type == PRNG){
-		g = prng_new("eicg(2147483647,111,1,0)");
-		if(g == NULL){
-			printf("Initializing random number generator failed\n");
-			pthread_exit(NULL);
-		}
-	}
+	// if(args->rng_type == PRNG){
+	// 	g = prng_new("eicg(2147483647,111,1,0)");
+	// 	if(g == NULL){
+	// 		printf("Initializing random number generator failed\n");
+	// 		pthread_exit(NULL);
+	// 	}
+	// }
 	//printf("Thread %d doing %d tries\n",t,ncount);
 
 	float x, y;
@@ -80,17 +80,19 @@ void * parallel_monte_carlo_try(void * arg){
 			y = rand() / (float) RAND_MAX;
 		}
 		else if(args->rng_type == PRNG){
-			x = prng_get_next(g);
-			y = prng_get_next(g);
+			x = rand() / (float) RAND_MAX;
+			y = rand() / (float) RAND_MAX;
+			// x = prng_get_next(g);
+			// y = prng_get_next(g);
 		}
 		points_in_circle += (x*x + y*y <= 1.0f);
 	}
 	args->estimate = 4.0f * points_in_circle / trials;
 
-	if(args->rng_type == PRNG){
-		prng_reset(g);
-		prng_free(g);
-	}
+	// if(args->rng_type == PRNG){
+	// 	prng_reset(g);
+	// 	prng_free(g);
+	// }
 	pthread_exit(NULL);	 
 }
 
