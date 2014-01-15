@@ -60,9 +60,8 @@ typedef struct{
 
 void * parallel_monte_carlo_try(void * arg){
 	struct prng *g;
-	try_arg_t *args = (try_arg *)arg;
+	try_arg_t *args = (try_arg_t *)arg;
 	long trials = args->ncount;
-	int t = args->thread_id;
 	
 	if(args->rng_type == PRNG){
 		g = prng_new("eicg(2147483647,111,1,0)");
@@ -106,8 +105,8 @@ float host_pthread_monte_carlo(long trials,int num_pthreads,random_generator_t r
 	void * status;
 	float pi_pthreads;
 
-	try_args = (float *)malloc(num_pthreads*sizeof(try_arg_t));
-	threads = (float *)malloc(num_pthreads*sizeof(pthread_t));  //  Allocate pthreads
+	try_args = (try_arg_t *)malloc(num_pthreads*sizeof(try_arg_t));
+	threads = (pthread_t *)malloc(num_pthreads*sizeof(pthread_t));  //  Allocate pthreads
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
 	tries_per_pthread = BLOCKS * THREADS * TRIALS_PER_THREAD / num_pthreads;
@@ -118,7 +117,7 @@ float host_pthread_monte_carlo(long trials,int num_pthreads,random_generator_t r
 		try_args[t].rng_type = rng_type;
 		try_args[t].estimate = 0;//For output
 		rc = pthread_create(&threads[t],&attr,try,(void *)&tries_per_pthread);
-		if(rc){
+		if(rc != 0){
 			printf("ERROR; return code from pthread_create()\
 				 is %d\n", rc);
 			exit(-1);
