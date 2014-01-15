@@ -4,12 +4,15 @@
 
 #include <stdio.h>
 #include <cuda.h>
+#include <time.h>
 
-#define NBIN 10000000  // Number of bins
-#define NUM_BLOCK  30  // Number of thread blocks
-#define NUM_THREAD  8  // Number of threads per block
+#define NBIN 4096  // Number of bins
+#define NUM_BLOCK  256  // Number of thread blocks
+#define NUM_THREAD  256  // Number of threads per block
+#define PI 3.1415926535  // known value of pi
+
 int tid;
-float pi = 0;
+float pi_gpu = 0;
 
 // Kernel that executes on the CUDA device
 __global__ void cal_pi(float *sum, int nbin, float step, int nthreads, int nblocks) {
@@ -22,11 +25,29 @@ __global__ void cal_pi(float *sum, int nbin, float step, int nthreads, int nbloc
 	}
 }
 
+float host_monte_carlo(long trials) {
+	float x, y;
+	long points_in_circle;
+	for(long i = 0; i < trials; i++) {
+		x = rand() / (float) RAND_MAX;
+		y = rand() / (float) RAND_MAX;
+		points_in_circle += (x*x + y*y <= 1.0f);
+	}
+	return 4.0f * points_in_circle / trials;
+}
+
 // Main routine that executes on the host
 int main(void) {
+	clock_t start, stop;
+	
 	dim3 dimGrid(NUM_BLOCK,1,1);  // Grid dimensions
 	dim3 dimBlock(NUM_THREAD,1,1);  // Block dimensions
 	float *sumHost, *sumDev;  // Pointer to host & device arrays
+
+	printf("# of trials per thread = %d, # of blocks = %d, # of threads/block = %d.\n", NBIN,
+NUM_BLOCK, NUM_THREAD);
+
+	start = clock();
 
 	float step = 1.0/NBIN;  // Step size
 	size_t size = NUM_BLOCK*NUM_THREAD*sizeof(float);  //Array memory size
@@ -39,15 +60,24 @@ int main(void) {
 	// Retrieve result from device and store it in host array
 	cudaMemcpy(sumHost, sumDev, size, cudaMemcpyDeviceToHost);
 	for(tid=0; tid<NUM_THREAD*NUM_BLOCK; tid++)
-		pi += sumHost[tid];
-	pi *= step;
+		pi_gpu += sumHost[tid];
+	pi_gpu *= step;
 
+	stop = clock();
 	// Print results
-	printf("PI = %f\n",pi);
+	printf("GPU pi calculated in %f s.\n", (stop-start)/(float)CLOCKS_PER_SEC);
 
 	// Cleanup
 	free(sumHost); 
 	cudaFree(sumDev);
 
+	start = clock();
+	float pi_cpu = host_monte_carlo(NUM_BLOCK * NUM_THREAD * NBIN);
+	stop = clock();
+	printf("CPU pi calculated in %f s.\n", (stop-start)/(float)CLOCKS_PER_SEC);
+
+	printf("CUDA estimate of PI = %f [error of %f]\n", pi_gpu, pi_gpu - PI);
+	printf("CPU estimate of PI = %f [error of %f]\n", pi_cpu, pi_cpu - PI);
+	
 	return 0;
 }
