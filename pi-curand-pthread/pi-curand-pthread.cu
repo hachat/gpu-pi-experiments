@@ -10,7 +10,7 @@
 #include <time.h>
 #include <curand_kernel.h>
 #include <pthread.h>
-//#include <prng.h>
+#include <prng.h>
 
 #define TRIALS_PER_THREAD 4096
 #define BLOCKS 256
@@ -59,23 +59,23 @@ typedef struct{
 
 
 void * parallel_monte_carlo_try(void * arg){
-	//struct prng *g;
+	struct prng *g;
 	try_arg_t *args = (try_arg_t *)arg;
 	long trials = args->ncount;
 	
-	// if(args->rng_type == PRNG){
-	// 	g = prng_new("eicg(2147483647,111,1,0)");
-	// 	if(g == NULL){
-	// 		printf("Initializing random number generator failed\n");
-	// 		pthread_exit(NULL);
-	// 	}
-	// }
+	if(args->rng_type == PRNG){
+		g = prng_new("eicg(2147483647,111,1,0)");
+		if(g == NULL){
+			printf("Initializing random number generator failed\n");
+			pthread_exit(NULL);
+		}
+	}
 	//printf("Thread %d doing %d tries\n",t,ncount);
 
 	float x, y;
 	long points_in_circle = 0;
 
-	printf("trying: ThreadID:%d, try_count:%ld\n",args->thread_id,trials);
+	//printf("trying: ThreadID:%d, try_count:%ld\n",args->thread_id,trials);
 		
 	for(long i = 0; i < trials; i++) {
 		if(args->rng_type == RAND){
@@ -83,21 +83,21 @@ void * parallel_monte_carlo_try(void * arg){
 			y = rand() / (float) RAND_MAX;
 		}
 		else if(args->rng_type == PRNG){
-			x = rand() / (float) RAND_MAX;
-			y = rand() / (float) RAND_MAX;
-			// x = prng_get_next(g);
-			// y = prng_get_next(g);
+			// x = rand() / (float) RAND_MAX;
+			// y = rand() / (float) RAND_MAX;
+			x = prng_get_next(g);
+			y = prng_get_next(g);
 		}
 		points_in_circle += (x*x + y*y <= 1.0f);
 	}
 	args->estimate = 4.0f * points_in_circle / trials;
 
-	// if(args->rng_type == PRNG){
-	// 	prng_reset(g);
-	// 	prng_free(g);
-	// }
+	if(args->rng_type == PRNG){
+		prng_reset(g);
+		prng_free(g);
+	}
 
-	printf("finished: ThreadID:%d, try_count:%ld, estimate:%f\n",args->thread_id,trials,args->estimate);
+	//printf("finished: ThreadID:%d, try_count:%ld, estimate:%f\n",args->thread_id,trials,args->estimate);
 	
 	pthread_exit(NULL);	 
 }
@@ -136,7 +136,7 @@ float host_pthread_monte_carlo(long trials,int num_pthreads,random_generator_t r
 			try_args[t].ncount = trials - (tries_per_pthread*(num_pthreads-1));
 		}
 		
-		printf("pthread_create: ThreadID:%d, try_count:%ld\n",try_args[t].thread_id,try_args[t].ncount);
+		//printf("pthread_create: ThreadID:%d, try_count:%ld\n",try_args[t].thread_id,try_args[t].ncount);
 		rc = pthread_create(&threads[t],&attr,parallel_monte_carlo_try,(void *)&try_args[t]);
 		if(rc){
 			printf("ERROR; return code from pthread_create()\
@@ -149,9 +149,9 @@ float host_pthread_monte_carlo(long trials,int num_pthreads,random_generator_t r
 
 	pi_pthreads = 0.0f;
 	for(t = 0; t < num_pthreads; t++){
-		printf("pthread_join: ThreadID:%d\n",t);
+		//printf("pthread_join: ThreadID:%d\n",t);
 		rc = pthread_join(threads[t], &status);
-		printf("pthread_joined: ThreadID:%d\n",t);
+		//printf("pthread_joined: ThreadID:%d\n",t);
 		
 		pi_pthreads += try_args[t].estimate;
 	}
