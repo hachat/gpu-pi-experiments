@@ -108,17 +108,23 @@ float host_pthread_monte_carlo(long trials,int num_pthreads,random_generator_t r
 	float pi_pthreads;
 
 	try_args = (try_arg_t *)malloc(num_pthreads*sizeof(try_arg_t));
+	if(try_args == NULL){
+		printf("ERROR; return malloc failed for try_args");
+	}
 	threads = (pthread_t *)malloc(num_pthreads*sizeof(pthread_t));  //  Allocate pthreads
+	if(threads == NULL){
+		printf("ERROR; return malloc failed for threads");
+	}
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
-	tries_per_pthread = BLOCKS * THREADS * TRIALS_PER_THREAD / num_pthreads;
+	tries_per_pthread = trials / num_pthreads;
 
 	for(t = 0; t < num_pthreads; t++){
 		try_args[t].thread_id = t;
 		try_args[t].ncount = tries_per_pthread;
 		try_args[t].rng_type = rng_type;
-		try_args[t].estimate = 0;//For output
-		rc = pthread_create(&threads[t],&attr,parallel_monte_carlo_try,(void *)&tries_per_pthread);
+		try_args[t].estimate = 0.0f;//For output
+		rc = pthread_create(&threads[t],&attr,parallel_monte_carlo_try,(void *)&try_args);
 		if(rc){
 			printf("ERROR; return code from pthread_create()\
 				 is %d\n", rc);
@@ -135,6 +141,7 @@ float host_pthread_monte_carlo(long trials,int num_pthreads,random_generator_t r
 
 	free(try_args);
 	free(threads);
+	pthread_exit(NULL);
 	return pi_pthreads;
 }
 
