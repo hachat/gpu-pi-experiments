@@ -15,10 +15,16 @@
 #define THREADS 256
 #define PI 3.1415926535  // known value of pi
 
-__global__ void gpu_monte_carlo(float *estimate, curandState *states) {
+#ifdef DP
+	typedef double real_t;
+#else
+	typedef float real_t;
+#endif
+	
+__global__ void gpu_monte_carlo(real_t *estimate, curandState *states) {
 	unsigned int tid = threadIdx.x + blockDim.x * blockIdx.x;
 	int points_in_circle = 0;
-	float x, y;
+	real_t x, y;
 
 	curand_init(1234, tid, 0, &states[tid]);  // 	Initialize CURAND
 
@@ -28,11 +34,11 @@ __global__ void gpu_monte_carlo(float *estimate, curandState *states) {
 		y = curand_uniform (&states[tid]);
 		points_in_circle += (x*x + y*y <= 1.0f); // count if x & y is in the circle.
 	}
-	estimate[tid] = 4.0f * points_in_circle / (float) TRIALS_PER_THREAD; // return estimate of pi
+	estimate[tid] = 4.0f * points_in_circle / (real_t) TRIALS_PER_THREAD; // return estimate of pi
 }
 
-float host_monte_carlo(long trials) {
-	float x, y;
+real_t host_monte_carlo(long trials) {
+	real_t x, y;
 	long points_in_circle;
 	for(long i = 0; i < trials; i++) {
 		x = rand() / (float) RAND_MAX;
@@ -44,8 +50,8 @@ float host_monte_carlo(long trials) {
 
 int main (int argc, char *argv[]) {
 	clock_t start, stop;
-	float host[BLOCKS * THREADS];
-	float *dev;
+	real_t host[BLOCKS * THREADS];
+	real_t *dev;
 	curandState *devStates;
 
 	printf("# of trials per thread = %d, # of blocks = %d, # of threads/block = %d.\n", TRIALS_PER_THREAD,
@@ -53,15 +59,15 @@ BLOCKS, THREADS);
 
 	start = clock();
 
-	cudaMalloc((void **) &dev, BLOCKS * THREADS * sizeof(float)); // allocate device mem. for counts
+	cudaMalloc((void **) &dev, BLOCKS * THREADS * sizeof(real_t)); // allocate device mem. for counts
 	
 	cudaMalloc( (void **)&devStates, THREADS * BLOCKS * sizeof(curandState) );
 
 	gpu_monte_carlo<<<BLOCKS, THREADS>>>(dev, devStates);
 
-	cudaMemcpy(host, dev, BLOCKS * THREADS * sizeof(float), cudaMemcpyDeviceToHost); // return results 
+	cudaMemcpy(host, dev, BLOCKS * THREADS * sizeof(real_t), cudaMemcpyDeviceToHost); // return results 
 
-	float pi_gpu;
+	real_t pi_gpu;
 	for(int i = 0; i < BLOCKS * THREADS; i++) {
 		pi_gpu += host[i];
 	}
@@ -73,7 +79,7 @@ BLOCKS, THREADS);
 	printf("GPU pi calculated in %f s.\n", (stop-start)/(float)CLOCKS_PER_SEC);
 
 	start = clock();
-	float pi_cpu = host_monte_carlo(BLOCKS * THREADS * TRIALS_PER_THREAD);
+	real_t pi_cpu = host_monte_carlo(BLOCKS * THREADS * TRIALS_PER_THREAD);
 	stop = clock();
 	printf("CPU pi calculated in %f s.\n", (stop-start)/(float)CLOCKS_PER_SEC);
 

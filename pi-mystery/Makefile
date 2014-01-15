@@ -74,7 +74,7 @@ NVCC            ?= $(CUDA_BIN_PATH)/nvcc
 GCC             ?= g++
 
 # Extra user flags
-EXTRA_NVCCFLAGS ?= -Wall -O3 -arch sm_13
+EXTRA_NVCCFLAGS ?= -O3 -arch sm_13
 EXTRA_LDFLAGS   ?=
 
 # CUDA code generation flags

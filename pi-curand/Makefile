@@ -74,7 +74,7 @@ NVCC            ?= $(CUDA_BIN_PATH)/nvcc
 GCC             ?= g++
 
 # Extra user flags
-EXTRA_NVCCFLAGS ?= -Wall -O3
+EXTRA_NVCCFLAGS ?= -O3 -arch sm_13
 EXTRA_LDFLAGS   ?=
 
 # CUDA code generation flags
@@ -116,13 +116,20 @@ endif
 # Common includes and paths for CUDA
 INCLUDES      := -I$(CUDA_INC_PATH) -I.
 
+DEFINES ?=
+
+.PHONEY: dp
+
 # Target rules
 all: build
+
+dp: DEFINES+= -D DP
+dp: build
 
 build: pi-curand
 
 pi-curand.o: pi-curand.cu
-	$(NVCC) $(CCFLAGS) $(EXTRA_CCFLAGS) $(INCLUDES) -o $@ -c $<
+	$(NVCC) $(CCFLAGS) $(EXTRA_NVCCFLAGS) $(DEFINES) $(INCLUDES) -o $@ -c $<
 
 pi-curand: pi-curand.o
 	$(GCC) $(CCFLAGS) -o $@ $+ $(LDFLAGS) $(EXTRA_LDFLAGS)
@@ -130,7 +137,7 @@ pi-curand: pi-curand.o
 	cp $@ ../../bin/$(OSLOWER)/$(TARGET)
 
 run: build
-	./pi-curand
+	../../bin/$(OSLOWER)/$(TARGET)/pi-curand
 
 clean:
 	rm -f pi-curand pi-curand.o 

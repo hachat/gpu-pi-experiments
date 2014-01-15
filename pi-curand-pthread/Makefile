@@ -116,13 +116,20 @@ endif
 # Common includes and paths for CUDA
 INCLUDES      := -I$(CUDA_INC_PATH) -I. -I./../lib
 
+DEFINES ?=
+
+.PHONEY: dp
+
 # Target rules
 all: build
 
+dp: DEFINES+= -D DP
+dp: build
+	
 build: pi-curand-pthread
 
 pi-curand-pthread.o: pi-curand-pthread.cu
-	$(NVCC) $(CCFLAGS) $(EXTRA_CCFLAGS) $(INCLUDES) -o $@ -c $<
+	$(NVCC) $(CCFLAGS) $(EXTRA_NVCCFLAGS) $(DEFINES) $(INCLUDES) -o $@ -c $<
 
 pi-curand-pthread: pi-curand-pthread.o
 	$(GCC) $(CCFLAGS) -o $@ $+ $(LDFLAGS) $(EXTRA_LDFLAGS)
@@ -130,7 +137,7 @@ pi-curand-pthread: pi-curand-pthread.o
 	cp $@ ../../bin/$(OSLOWER)/$(TARGET)
 
 run: build
-	./pi-curand-pthread
+	../../bin/$(OSLOWER)/$(TARGET)/pi-curand-pthread
 
 clean:
 	rm -f pi-curand-pthread pi-curand-pthread.o 

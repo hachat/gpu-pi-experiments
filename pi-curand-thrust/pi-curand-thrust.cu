@@ -16,13 +16,19 @@
 #define THREADS 256
 #define PI 3.1415926535  // known value of pi
 
+#ifdef DP
+  typedef double real_t;
+#else
+  typedef float real_t;
+#endif
+  
 struct estimate_pi : 
-    public thrust::unary_function<unsigned int, float>
+    public thrust::unary_function<unsigned int, real_t>
 {
   __device__
-  float operator()(unsigned int thread_id)
+  real_t operator()(unsigned int thread_id)
   {
-    float sum = 0;
+    real_t sum = 0;
     unsigned int N = TRIALS_PER_THREAD; // samples per thread
 
     unsigned int seed = thread_id;
@@ -36,11 +42,11 @@ struct estimate_pi :
     for(unsigned int i = 0; i < N; ++i)
     {
       // draw a sample from the unit square
-      float x = curand_uniform(&s);
-      float y = curand_uniform(&s);
+      real_t x = curand_uniform(&s);
+      real_t y = curand_uniform(&s);
 
       // measure distance from the origin
-      float dist = sqrtf(x*x + y*y);
+      real_t dist = sqrtf(x*x + y*y);
 
       // add 1.0f if (u0,u1) is inside the quarter circle
       if(dist <= 1.0f)
@@ -67,12 +73,12 @@ int main(void)
 
   start = clock();
 
-  float estimate = thrust::transform_reduce(
+  real_t estimate = thrust::transform_reduce(
         thrust::counting_iterator<int>(0),
         thrust::counting_iterator<int>(M),
         estimate_pi(),
         0.0f,
-        thrust::plus<float>());
+        thrust::plus<real_t>());
   estimate /= M;
 
   stop = clock();
