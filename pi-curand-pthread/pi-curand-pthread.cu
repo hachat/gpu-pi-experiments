@@ -74,6 +74,9 @@ void * parallel_monte_carlo_try(void * arg){
 
 	float x, y;
 	long points_in_circle = 0;
+
+	printf("trying: ThreadID:%d, try_count:%ld\n",args->thread_id,trials);
+		
 	for(long i = 0; i < trials; i++) {
 		if(args->rng_type == RAND){
 			x = rand() / (float) RAND_MAX;
@@ -93,6 +96,9 @@ void * parallel_monte_carlo_try(void * arg){
 	// 	prng_reset(g);
 	// 	prng_free(g);
 	// }
+
+	printf("finished: ThreadID:%d, try_count:%ld, estimate:%f\n",args->thread_id,trials,args->estimate);
+	
 	pthread_exit(NULL);	 
 }
 
@@ -124,18 +130,23 @@ float host_pthread_monte_carlo(long trials,int num_pthreads,random_generator_t r
 		try_args[t].ncount = tries_per_pthread;
 		try_args[t].rng_type = rng_type;
 		try_args[t].estimate = 0.0f;//For output
+		printf("pthread_create: ThreadID:%d, try_count:%ld\n",try_args[t].thread_id,try_args[t].ncount);
 		rc = pthread_create(&threads[t],&attr,parallel_monte_carlo_try,(void *)&try_args);
 		if(rc){
 			printf("ERROR; return code from pthread_create()\
 				 is %d\n", rc);
 			exit(-1);
 		}
+
 	}
 	pthread_attr_destroy(&attr);
 
 	pi_pthreads = 0.0f;
 	for(t = 0; t < num_pthreads; t++){
+		printf("pthread_join: ThreadID:%d\n",t);
 		rc = pthread_join(threads[t], &status);
+		printf("pthread_joined: ThreadID:%d\n",t);
+		
 		pi_pthreads += try_args[t].estimate;
 	}
 
@@ -204,8 +215,9 @@ BLOCKS, THREADS);
 
 	printf("CUDA estimate of PI = %f [error of %f]\n", pi_gpu, pi_gpu - PI);
 	printf("CPU estimate of PI = %f [error of %f]\n", pi_cpu, pi_cpu - PI);
-	printf("CPU pthread estimate of PI = %f [error of %f]\n", pi_cpu_pthread, pi_cpu_pthread - PI);
-	
+	if(argc >1){
+		printf("CPU pthread estimate of PI = %f [error of %f]\n", pi_cpu_pthread, pi_cpu_pthread - PI);
+	}
 	return 0;
 }
 
