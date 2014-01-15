@@ -84,7 +84,6 @@ int main(void)
 
   std::cout << "CUDA estimate of PI = " << estimate << " [error of " << error << "]" << std::endl;
   
-  std::cout << estimate << std::endl;
   return 0;
 }
 

@@ -116,11 +116,16 @@ endif
 # Common includes and paths for CUDA
 INCLUDES      := -I$(CUDA_INC_PATH) -I.
 
+DEFINES ?=
+
 # Target rules
 all: build
 
 build: pi-mystery
 
+dp: DEFINES := -D DP
+dp: all
+	
 pi-mystery.o: pi-mystery.cu
 	$(NVCC) $(CCFLAGS) $(EXTRA_CCFLAGS) $(INCLUDES) -o $@ -c $<
 

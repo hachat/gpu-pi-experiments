@@ -11,13 +11,19 @@
 #define NUM_THREAD  256  // Number of threads per block
 #define PI 3.1415926535  // known value of pi
 
+#ifdef DP
+	typedef double real_t;
+#else
+	typedef float real_t;
+#endif
+
 int tid;
-float pi_gpu = 0;
+real_t pi_gpu = 0;
 
 // Kernel that executes on the CUDA device
-__global__ void cal_pi(float *sum, int nbin, float step, int nthreads, int nblocks) {
+__global__ void cal_pi(real_t *sum, int nbin, real_t step, int nthreads, int nblocks) {
 	int i;
-	float x;
+	real_t x;
 	int idx = blockIdx.x*blockDim.x+threadIdx.x;  // Sequential thread index across the blocks
 	for (i=idx; i< nbin; i+=nthreads*nblocks) {
 		x = (i+0.5)*step;
@@ -25,8 +31,8 @@ __global__ void cal_pi(float *sum, int nbin, float step, int nthreads, int nbloc
 	}
 }
 
-float host_monte_carlo(long trials) {
-	float x, y;
+real_t host_monte_carlo(long trials) {
+	real_t x, y;
 	long points_in_circle;
 	for(long i = 0; i < trials; i++) {
 		x = rand() / (float) RAND_MAX;
@@ -42,16 +48,16 @@ int main(void) {
 	
 	dim3 dimGrid(NUM_BLOCK,1,1);  // Grid dimensions
 	dim3 dimBlock(NUM_THREAD,1,1);  // Block dimensions
-	float *sumHost, *sumDev;  // Pointer to host & device arrays
+	real_t *sumHost, *sumDev;  // Pointer to host & device arrays
 
 	printf("# of trials per thread = %d, # of blocks = %d, # of threads/block = %d.\n", NBIN,
 NUM_BLOCK, NUM_THREAD);
 
 	start = clock();
 
-	float step = 1.0/NBIN;  // Step size
-	size_t size = NUM_BLOCK*NUM_THREAD*sizeof(float);  //Array memory size
-	sumHost = (float *)malloc(size);  //  Allocate array on host
+	real_t step = 1.0/NBIN;  // Step size
+	size_t size = NUM_BLOCK*NUM_THREAD*sizeof(real_t);  //Array memory size
+	sumHost = (real_t *)malloc(size);  //  Allocate array on host
 	cudaMalloc((void **) &sumDev, size);  // Allocate array on device
 	// Initialize array in device to 0
 	cudaMemset(sumDev, 0, size);
@@ -72,7 +78,7 @@ NUM_BLOCK, NUM_THREAD);
 	cudaFree(sumDev);
 
 	start = clock();
-	float pi_cpu = host_monte_carlo(NUM_BLOCK * NUM_THREAD * NBIN);
+	real_t pi_cpu = host_monte_carlo(NUM_BLOCK * NUM_THREAD * NBIN);
 	stop = clock();
 	printf("CPU pi calculated in %f s.\n", (stop-start)/(float)CLOCKS_PER_SEC);
 
