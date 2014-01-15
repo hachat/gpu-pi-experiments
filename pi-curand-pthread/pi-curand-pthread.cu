@@ -130,6 +130,12 @@ float host_pthread_monte_carlo(long trials,int num_pthreads,random_generator_t r
 		try_args[t].ncount = tries_per_pthread;
 		try_args[t].rng_type = rng_type;
 		try_args[t].estimate = 0.0f;//For output
+		if(t == 0){
+			//First thread. fixing integer division mismatch by adding the rest to
+			//this thread. not actually much of an issue, as this is a random experiment
+			try_args[t].ncount = trials - (tries_per_pthread*(num_pthreads-1));
+		}
+		
 		printf("pthread_create: ThreadID:%d, try_count:%ld\n",try_args[t].thread_id,try_args[t].ncount);
 		rc = pthread_create(&threads[t],&attr,parallel_monte_carlo_try,(void *)&try_args[t]);
 		if(rc){
@@ -149,6 +155,7 @@ float host_pthread_monte_carlo(long trials,int num_pthreads,random_generator_t r
 		
 		pi_pthreads += try_args[t].estimate;
 	}
+	pi_pthreads = pi_pthreads/num_pthreads;
 
 	free(try_args);
 	free(threads);
