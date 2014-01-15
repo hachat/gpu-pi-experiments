@@ -76,11 +76,13 @@ int main(void)
   estimate /= M;
 
   stop = clock();
+  float elapsed_time = (stop-start)/(float)CLOCKS_PER_SEC);
+  float error = estimate - PI;
 
   std::cout << std::setprecision(7);
-  std::cout << "THRUST pi calculated in "<< (stop-start)/(float)CLOCKS_PER_SEC) << " s."<< std::endl;
+  std::cout << "THRUST pi calculated in " << elapsed_time << " s."<< std::endl;
 
-  std::cout << "CUDA estimate of PI = " << estimate << " [error of " << estimate - PI << "]" << std::endl;
+  std::cout << "CUDA estimate of PI = " << estimate << " [error of " << error << "]" << std::endl;
   
   std::cout << estimate << std::endl;
   return 0;
