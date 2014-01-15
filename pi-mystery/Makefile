@@ -118,24 +118,28 @@ INCLUDES      := -I$(CUDA_INC_PATH) -I.
 
 DEFINES ?=
 
+.PHONEY: dp
+
 # Target rules
 all: build
 
+dp: $(DEFINES) all
+
+$(DEFINES): DEFINES+="-D DP"
+
 build: pi-mystery
 
-dp: DEFINES := -D DP
-dp: all
-	
 pi-mystery.o: pi-mystery.cu
 	$(NVCC) $(CCFLAGS) $(EXTRA_CCFLAGS) $(INCLUDES) -o $@ -c $<
 
 pi-mystery: pi-mystery.o
-	$(GCC) $(CCFLAGS) -o $@ $+ $(LDFLAGS) $(EXTRA_LDFLAGS)
+	$(GCC) $(CCFLAGS) -o $@ $+ $(LDFLAGS) $(EXTRA_LDFLAGS) $(DEFINES)
 	mkdir -p ../../bin/$(OSLOWER)/$(TARGET)
 	cp $@ ../../bin/$(OSLOWER)/$(TARGET)
 
 run: build
-	./pi-mystery
+	../../bin/$(OSLOWER)/$(TARGET)/pi-mystery
 
+	
 clean:
 	rm -f pi-mystery pi-mystery.o 
