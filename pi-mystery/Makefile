@@ -123,23 +123,22 @@ DEFINES ?=
 # Target rules
 all: build
 
-dp: $(DEFINES) all
+dp: $(DPDEFS) all
 
-$(DEFINES): DEFINES+="-D DP"
+$(DPDEFS): DEFINES+="-D DP"
 
 build: pi-mystery
 
 pi-mystery.o: pi-mystery.cu
-	$(NVCC) $(CCFLAGS) $(EXTRA_CCFLAGS) $(INCLUDES) -o $@ -c $<
+	$(NVCC) $(CCFLAGS) $(EXTRA_CCFLAGS) $(DEFINES) $(INCLUDES) -o $@ -c $<
 
 pi-mystery: pi-mystery.o
-	$(GCC) $(CCFLAGS) -o $@ $+ $(LDFLAGS) $(EXTRA_LDFLAGS) $(DEFINES)
+	$(GCC) $(CCFLAGS) -o $@ $+ $(LDFLAGS) $(EXTRA_LDFLAGS)
 	mkdir -p ../../bin/$(OSLOWER)/$(TARGET)
 	cp $@ ../../bin/$(OSLOWER)/$(TARGET)
 
 run: build
 	../../bin/$(OSLOWER)/$(TARGET)/pi-mystery
-
 	
 clean:
 	rm -f pi-mystery pi-mystery.o 
