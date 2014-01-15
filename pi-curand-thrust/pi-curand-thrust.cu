@@ -76,7 +76,7 @@ int main(void)
   estimate /= M;
 
   stop = clock();
-  float elapsed_time = (stop-start)/(float)CLOCKS_PER_SEC);
+  float elapsed_time = (stop-start)/(float)CLOCKS_PER_SEC;
   float error = estimate - PI;
 
   std::cout << std::setprecision(7);
