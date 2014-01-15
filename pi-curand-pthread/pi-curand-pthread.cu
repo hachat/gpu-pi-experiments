@@ -10,6 +10,7 @@
 #include <time.h>
 #include <curand_kernel.h>
 #include <pthread.h>
+#include <prng.h>
 
 #define TRIALS_PER_THREAD 4096
 #define BLOCKS 256
@@ -59,7 +60,7 @@ typedef struct{
 
 void * parallel_monte_carlo_try(void * arg){
 	struct prng *g;
-	try_arg *args = (try_arg *)arg;
+	try_arg_t *args = (try_arg *)arg;
 	long trials = args->ncount;
 	int t = args->thread_id;
 	
