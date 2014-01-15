@@ -123,10 +123,9 @@ DEFINES ?=
 # Target rules
 all: build
 
-dp: $(DPDEFS) all
-
-$(DPDEFS): DEFINES+="-D DP"
-
+dp: DEFINES+= -D DP
+dp: build
+	
 build: pi-mystery
 
 pi-mystery.o: pi-mystery.cu
@@ -139,6 +138,6 @@ pi-mystery: pi-mystery.o
 
 run: build
 	../../bin/$(OSLOWER)/$(TARGET)/pi-mystery
-	
+
 clean:
 	rm -f pi-mystery pi-mystery.o 
