@@ -152,7 +152,6 @@ float host_pthread_monte_carlo(long trials,int num_pthreads,random_generator_t r
 
 	free(try_args);
 	free(threads);
-	pthread_exit(NULL);
 	return pi_pthreads;
 }
 
