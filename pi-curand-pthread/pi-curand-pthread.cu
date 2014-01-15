@@ -131,7 +131,7 @@ float host_pthread_monte_carlo(long trials,int num_pthreads,random_generator_t r
 		try_args[t].rng_type = rng_type;
 		try_args[t].estimate = 0.0f;//For output
 		printf("pthread_create: ThreadID:%d, try_count:%ld\n",try_args[t].thread_id,try_args[t].ncount);
-		rc = pthread_create(&threads[t],&attr,parallel_monte_carlo_try,(void *)&try_args);
+		rc = pthread_create(&threads[t],&attr,parallel_monte_carlo_try,(void *)&try_args[t]);
 		if(rc){
 			printf("ERROR; return code from pthread_create()\
 				 is %d\n", rc);
