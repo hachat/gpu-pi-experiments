@@ -74,7 +74,7 @@ NVCC            ?= $(CUDA_BIN_PATH)/nvcc
 GCC             ?= g++
 
 # Extra user flags
-EXTRA_NVCCFLAGS ?= -Wall -O3
+EXTRA_NVCCFLAGS ?= -Wall -O3 -arch sm_13
 EXTRA_LDFLAGS   ?=
 
 # CUDA code generation flags
@@ -125,11 +125,11 @@ all: build
 
 dp: DEFINES+= -D DP
 dp: build
-	
+
 build: pi-mystery
 
 pi-mystery.o: pi-mystery.cu
-	$(NVCC) $(CCFLAGS) $(EXTRA_CCFLAGS) $(DEFINES) $(INCLUDES) -o $@ -c $<
+	$(NVCC) $(NVCCFLAGS) $(EXTRA_NVCCFLAGS) $(DEFINES) $(INCLUDES) -o $@ -c $<
 
 pi-mystery: pi-mystery.o
 	$(GCC) $(CCFLAGS) -o $@ $+ $(LDFLAGS) $(EXTRA_LDFLAGS)
