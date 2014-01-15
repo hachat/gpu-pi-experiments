@@ -74,7 +74,7 @@ NVCC            ?= $(CUDA_BIN_PATH)/nvcc
 GCC             ?= g++
 
 # Extra user flags
-EXTRA_NVCCFLAGS ?= -Wall -O3
+EXTRA_NVCCFLAGS ?= -O3 -arch sm_13
 EXTRA_LDFLAGS   ?= 
 
 # CUDA code generation flags
@@ -118,14 +118,33 @@ INCLUDES      := -I$(CUDA_INC_PATH) -I. -I./../lib
 
 DEFINES ?=
 
-.PHONEY: dp
+.PHONEY: dp sp-24 dp-24 sp-26 dp-26 sp-28 dp-28
 
 # Target rules
 all: build
 
+
 dp: DEFINES+= -D DP
 dp: build
 	
+sp-24: DEFINES+= -D TRIALS_PER_THREAD 256
+sp-24: build
+
+dp-24: DEFINES+= -D DP -D TRIALS_PER_THREAD 256
+dp-24: build
+
+sp-26: DEFINES+= -D TRIALS_PER_THREAD 1024
+sp-26: build
+
+dp-26: DEFINES+= -D DP -D TRIALS_PER_THREAD 1024
+dp-26: build
+
+sp-28: DEFINES+= -D TRIALS_PER_THREAD 4096
+sp-28: build
+
+dp-28: DEFINES+= -D DP -D TRIALS_PER_THREAD 4096
+dp-28: build
+
 build: pi-curand
 
 pi-curand.o: pi-curand.cu

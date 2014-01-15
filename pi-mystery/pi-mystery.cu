@@ -6,7 +6,10 @@
 #include <cuda.h>
 #include <time.h>
 
-#define NBIN 4096  // Number of bins
+#ifndef TRIALS_PER_THREAD
+	#define TRIALS_PER_THREAD 4096
+#endif
+#define NBIN TRIALS_PER_THREAD  // Number of bins
 #define NUM_BLOCK  256  // Number of thread blocks
 #define NUM_THREAD  256  // Number of threads per block
 #define PI 3.1415926535  // known value of pi

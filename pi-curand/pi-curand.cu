@@ -12,7 +12,9 @@
 #include <pthread.h>
 #include <prng.h>
 
-#define TRIALS_PER_THREAD 4096
+#ifndef TRIALS_PER_THREAD
+	#define TRIALS_PER_THREAD 4096
+#endif
 #define BLOCKS 256
 #define THREADS 256
 #define PI 3.1415926535  // known value of pi
