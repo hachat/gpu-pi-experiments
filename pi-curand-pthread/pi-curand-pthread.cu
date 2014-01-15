@@ -59,17 +59,17 @@ typedef struct{
 
 
 void * parallel_monte_carlo_try(void * arg){
-	struct prng *g;
+	//struct prng *g;
 	try_arg_t *args = (try_arg_t *)arg;
 	long trials = args->ncount;
 	
-	if(args->rng_type == PRNG){
-		g = prng_new("eicg(2147483647,111,1,0)");
-		if(g == NULL){
-			printf("Initializing random number generator failed\n");
-			pthread_exit(NULL);
-		}
-	}
+	// if(args->rng_type == PRNG){
+	// 	g = prng_new("eicg(2147483647,111,1,0)");
+	// 	if(g == NULL){
+	// 		printf("Initializing random number generator failed\n");
+	// 		pthread_exit(NULL);
+	// 	}
+	// }
 	//printf("Thread %d doing %d tries\n",t,ncount);
 
 	float x, y;
@@ -83,19 +83,19 @@ void * parallel_monte_carlo_try(void * arg){
 			y = rand() / (float) RAND_MAX;
 		}
 		else if(args->rng_type == PRNG){
-			// x = rand() / (float) RAND_MAX;
-			// y = rand() / (float) RAND_MAX;
-			x = prng_get_next(g);
-			y = prng_get_next(g);
+			x = rand() / (float) RAND_MAX;
+			y = rand() / (float) RAND_MAX;
+			// x = prng_get_next(g);
+			// y = prng_get_next(g);
 		}
 		points_in_circle += (x*x + y*y <= 1.0f);
 	}
 	args->estimate = 4.0f * points_in_circle / trials;
 
-	if(args->rng_type == PRNG){
-		prng_reset(g);
-		prng_free(g);
-	}
+	// if(args->rng_type == PRNG){
+	// 	prng_reset(g);
+	// 	prng_free(g);
+	// }
 
 	//printf("finished: ThreadID:%d, try_count:%ld, estimate:%f\n",args->thread_id,trials,args->estimate);
 	
@@ -207,6 +207,7 @@ BLOCKS, THREADS);
 			if(strcmp(argv[2],"RAND")){
 				rng_type = RAND;
 			}else if(strcmp(argv[2],"PRNG")){
+				printf("PRNG Not Supported at the moment. reverting to RAND\n");
 				rng_type = PRNG;
 			}else{
 				rng_type = RAND;
