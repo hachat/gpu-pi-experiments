@@ -114,7 +114,7 @@ else
 endif
 
 # Common includes and paths for CUDA
-INCLUDES      := -I$(CUDA_INC_PATH) -I. -I$(CUDA_PATH)/samples/common/inc -I./../lib
+INCLUDES      := -I$(CUDA_INC_PATH) -I. -I./../lib
 
 # Target rules
 all: build

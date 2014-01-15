@@ -119,18 +119,18 @@ INCLUDES      := -I$(CUDA_INC_PATH) -I.
 # Target rules
 all: build
 
-build: pi-mystery
+build: pi-curand-thrust
 
-pi-mystery.o: pi-mystery.cu
+pi-curand-thrust.o: pi-curand-thrust.cu
 	$(NVCC) $(CCFLAGS) $(EXTRA_CCFLAGS) $(INCLUDES) -o $@ -c $<
 
-pi-mystery: pi-mystery.o
+pi-curand-thrust: pi-curand-thrust.o
 	$(GCC) $(CCFLAGS) -o $@ $+ $(LDFLAGS) $(EXTRA_LDFLAGS)
 	mkdir -p ../../bin/$(OSLOWER)/$(TARGET)
 	cp $@ ../../bin/$(OSLOWER)/$(TARGET)
 
 run: build
-	./pi-mystery
+	./pi-curand-thrust
 
 clean:
-	rm -f pi-mystery pi-mystery.o 
+	rm -f pi-curand-thrust pi-curand-thrust.o 

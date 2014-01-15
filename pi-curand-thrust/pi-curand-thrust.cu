@@ -17,7 +17,7 @@ struct estimate_pi :
   float operator()(unsigned int thread_id)
   {
     float sum = 0;
-    unsigned int N = 10000; // samples per thread
+    unsigned int N = 4096; // samples per thread
 
     unsigned int seed = thread_id;
 
@@ -52,7 +52,7 @@ struct estimate_pi :
 int main(void)
 {
   // use 30K independent seeds
-  int M = 30000;
+  int M = 256*256;
 
   float estimate = thrust::transform_reduce(
         thrust::counting_iterator<int>(0),
