@@ -75,7 +75,7 @@ GCC             ?= g++
 
 # Extra user flags
 EXTRA_NVCCFLAGS ?= -Wall -O3
-EXTRA_LDFLAGS   ?= -L./../lib -lprng
+EXTRA_LDFLAGS   ?= -L./../lib -llibprng.a
 
 # CUDA code generation flags
 GENCODE_SM10    := -gencode arch=compute_10,code=sm_10
