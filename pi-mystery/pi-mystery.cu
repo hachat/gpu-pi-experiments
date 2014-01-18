@@ -6,10 +6,9 @@
 #include <cuda.h>
 #include <time.h>
 
-#ifndef TRIALS_PER_THREAD
-	#define TRIALS_PER_THREAD 4096
-#endif
-#define NBIN TRIALS_PER_THREAD  // Number of bins
+
+int NBIN = 4096;
+
 #define NUM_BLOCK  256  // Number of thread blocks
 #define NUM_THREAD  256  // Number of threads per block
 #define PI 3.1415926535  // known value of pi
@@ -46,9 +45,14 @@ real_t host_monte_carlo(long trials) {
 }
 
 // Main routine that executes on the host
-int main(void) {
+int main(int argc,char *argv[]) {
 	clock_t start, stop;
 	
+
+	if(argc >1){
+		NBIN = atoi(argv[1]);
+	}
+
 	dim3 dimGrid(NUM_BLOCK,1,1);  // Grid dimensions
 	dim3 dimBlock(NUM_THREAD,1,1);  // Block dimensions
 	real_t *sumHost, *sumDev;  // Pointer to host & device arrays

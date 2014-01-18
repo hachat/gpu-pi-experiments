@@ -1,275 +1,88 @@
 cd pi-curand
 make clean
-make sp-24
-../../bin/linux/release/pi-curand 2
-../../bin/linux/release/pi-curand 4
-../../bin/linux/release/pi-curand 8
+make sp
+../../bin/linux/release/pi-curand 256 2
+../../bin/linux/release/pi-curand 1024 2
+../../bin/linux/release/pi-curand 4096 2
+
+../../bin/linux/release/pi-curand 256 4
+../../bin/linux/release/pi-curand 1024 4
+../../bin/linux/release/pi-curand 4096 4
+
+../../bin/linux/release/pi-curand 256 8
+../../bin/linux/release/pi-curand 1024 8
+../../bin/linux/release/pi-curand 4096 8
+
 make clean
 
-make sp-24
-../../bin/linux/release/pi-curand 2
-../../bin/linux/release/pi-curand 4
-../../bin/linux/release/pi-curand 8
-make clean
+make dp
+../../bin/linux/release/pi-curand 256 2
+../../bin/linux/release/pi-curand 1024 2
+../../bin/linux/release/pi-curand 4096 2
 
-make dp-24
-../../bin/linux/release/pi-curand 2
-../../bin/linux/release/pi-curand 4
-../../bin/linux/release/pi-curand 8
-make clean
+../../bin/linux/release/pi-curand 256 4
+../../bin/linux/release/pi-curand 1024 4
+../../bin/linux/release/pi-curand 4096 4
 
-make dp-24
-../../bin/linux/release/pi-curand 2
-../../bin/linux/release/pi-curand 4
-../../bin/linux/release/pi-curand 8
-make clean
-
-make sp-26
-../../bin/linux/release/pi-curand 2
-../../bin/linux/release/pi-curand 4
-../../bin/linux/release/pi-curand 8
-make clean
-
-make sp-26
-../../bin/linux/release/pi-curand 2
-../../bin/linux/release/pi-curand 4
-../../bin/linux/release/pi-curand 8
-make clean
-
-make dp-26
-../../bin/linux/release/pi-curand 2
-../../bin/linux/release/pi-curand 4
-../../bin/linux/release/pi-curand 8
-make clean
-
-make dp-26
-../../bin/linux/release/pi-curand 2
-../../bin/linux/release/pi-curand 4
-../../bin/linux/release/pi-curand 8
-make clean
-
-make sp-28
-../../bin/linux/release/pi-curand 2
-../../bin/linux/release/pi-curand 4
-../../bin/linux/release/pi-curand 8
-make clean
-
-make sp-28
-../../bin/linux/release/pi-curand 2
-../../bin/linux/release/pi-curand 4
-../../bin/linux/release/pi-curand 8
-make clean
-
-make dp-28
-../../bin/linux/release/pi-curand 2
-../../bin/linux/release/pi-curand 4
-../../bin/linux/release/pi-curand 8
-make clean
-
-make dp-28
-../../bin/linux/release/pi-curand 2
-../../bin/linux/release/pi-curand 4
-../../bin/linux/release/pi-curand 8
+../../bin/linux/release/pi-curand 256 8
+../../bin/linux/release/pi-curand 1024 8
+../../bin/linux/release/pi-curand 4096 8
 make clean
 cd ..
 
 cd ./pi-mystery
 make clean
-make sp-24
-make run
+make sp
+../../bin/linux/release/pi-mystery 256
+../../bin/linux/release/pi-mystery 1024
+../../bin/linux/release/pi-mystery 4096
 make clean
 
-make sp-24
-make run
+make dp
+../../bin/linux/release/pi-mystery 256
+../../bin/linux/release/pi-mystery 1024
+../../bin/linux/release/pi-mystery 4096
 make clean
-
-make dp-24
-make run
-make clean
-
-make dp-24
-make run
-make clean
-
-make sp-26
-make run
-make clean
-
-make sp-26
-make run
-make clean
-
-make dp-26
-make run
-make clean
-
-make dp-26
-make run
-make clean
-
-make sp-28
-make run
-make clean
-
-make sp-28
-make run
-make clean
-
-make dp-28
-make run
-make clean
-
-make dp-28
-make run
-make clean
-
 cd ..
 
 cd ./pi-myrand
-make sp-24
-make run
+make sp
+../../bin/linux/release/pi-myrand 256
+../../bin/linux/release/pi-myrand 1024
+../../bin/linux/release/pi-myrand 4096
 make clean
 
-make sp-24
-make run
+make dp
+../../bin/linux/release/pi-myrand 256
+../../bin/linux/release/pi-myrand 1024
+../../bin/linux/release/pi-myrand 4096
 make clean
-
-make dp-24
-make run
-make clean
-
-make dp-24
-make run
-make clean
-
-make sp-26
-make run
-make clean
-
-make sp-26
-make run
-make clean
-
-make dp-26
-make run
-make clean
-
-make dp-26
-make run
-make clean
-
-make sp-28
-make run
-make clean
-
-make sp-28
-make run
-make clean
-
-make dp-28
-make run
-make clean
-
-make dp-28
-make run
-make clean
-
 cd ..
 
 cd ./pi-curand
-make sp-24
-make run
+make sp
+../../bin/linux/release/pi-curand 256
+../../bin/linux/release/pi-curand 1024
+../../bin/linux/release/pi-curand 4096
 make clean
 
-make sp-24
-make run
+make dp
+../../bin/linux/release/pi-curand 256
+../../bin/linux/release/pi-curand 1024
+../../bin/linux/release/pi-curand 4096
 make clean
-
-make dp-24
-make run
-make clean
-
-make dp-24
-make run
-make clean
-
-make sp-26
-make run
-make clean
-
-make sp-26
-make run
-make clean
-
-make dp-26
-make run
-make clean
-
-make dp-26
-make run
-make clean
-
-make sp-28
-make run
-make clean
-
-make sp-28
-make run
-make clean
-
-make dp-28
-make run
-make clean
-
-make dp-28
-make run
-make clean
-
 cd ..
 
 cd ./pi-curand-thrust
-make sp-24
-make run
-make clean
-make sp-24
-make run
-make clean
-
-make dp-24
-make run
+make sp
+../../bin/linux/release/pi-curand-thrust 256
+../../bin/linux/release/pi-curand-thrust 1024
+../../bin/linux/release/pi-curand-thrust 4096
 make clean
 
-make dp-24
-make run
+make dp
+../../bin/linux/release/pi-curand-thrust 256
+../../bin/linux/release/pi-curand-thrust 1024
+../../bin/linux/release/pi-curand-thrust 4096
 make clean
-
-make sp-26
-make run
-make clean
-
-make sp-26
-make run
-make clean
-
-make dp-26
-make run
-make clean
-
-make dp-26
-make run
-make clean
-
-make sp-28
-make run
-make clean
-
-make sp-28
-make run
-make clean
-
-make dp-28
-make run
-make clean
-
-make dp-28
 cd ..

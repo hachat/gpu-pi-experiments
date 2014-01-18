@@ -118,7 +118,7 @@ INCLUDES      := -I$(CUDA_INC_PATH) -I.
 
 DEFINES ?=
 
-.PHONEY: dp sp-24 dp-24 sp-26 dp-26 sp-28 dp-28
+.PHONEY: dp sp
 
 # Target rules
 all: build
@@ -127,23 +127,7 @@ all: build
 dp: DEFINES+= -D DP
 dp: build
 	
-sp-24: DEFINES+= -D TRIALS_PER_THREAD 256
-sp-24: build
-
-dp-24: DEFINES+= -D DP -D TRIALS_PER_THREAD 256
-dp-24: build
-
-sp-26: DEFINES+= -D TRIALS_PER_THREAD 1024
-sp-26: build
-
-dp-26: DEFINES+= -D DP -D TRIALS_PER_THREAD 1024
-dp-26: build
-
-sp-28: DEFINES+= -D TRIALS_PER_THREAD 4096
-sp-28: build
-
-dp-28: DEFINES+= -D DP -D TRIALS_PER_THREAD 4096
-dp-28: build
+sp: build
 
 build: pi-curand-thrust
 

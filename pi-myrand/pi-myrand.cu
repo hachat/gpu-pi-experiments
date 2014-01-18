@@ -9,9 +9,8 @@
 #include <math.h>
 #include <time.h>
 
-#ifndef TRIALS_PER_THREAD
-	#define TRIALS_PER_THREAD 4096
-#endif
+int TRIALS_PER_THREAD = 4096;
+
 #define BLOCKS 256
 #define THREADS 256
 #define PI 3.1415926535  // known value of pi
@@ -65,7 +64,10 @@ int main (int argc, char *argv[]) {
 	real_t host[BLOCKS * THREADS];
 	real_t *dev;
 
-
+	if(argc > 1){
+		TRIALS_PER_THREAD = atoi(argv[1]);
+	}
+	
 	printf("# of trials per thread = %d, # of blocks = %d, # of threads/block = %d.\n", TRIALS_PER_THREAD,
 BLOCKS, THREADS);
 

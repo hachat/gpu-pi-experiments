@@ -11,9 +11,8 @@
 #include <time.h>
 
 // we could vary M & N to find the perf sweet spot
-#ifndef TRIALS_PER_THREAD
-  #define TRIALS_PER_THREAD 4096
-#endif
+int TRIALS_PER_THREAD = 4096;
+
 #define BLOCKS 256
 #define THREADS 256
 #define PI 3.1415926535  // known value of pi
@@ -63,13 +62,15 @@ struct estimate_pi :
   }
 };
 
-int main(void)
+int main(int argc, char *argv[])
 {
   // use 30K independent seeds
   int M = BLOCKS*THREADS;
   clock_t start, stop;
   
-
+  if(argc > 1){
+    TRIALS_PER_THREAD = atoi(argv[1])
+  }
   std::cout << "# of trials per thread = "<< TRIALS_PER_THREAD <<" # of blocks * # of threads/block = " 
             << BLOCKS*THREADS << std::endl;
 

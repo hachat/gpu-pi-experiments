@@ -12,9 +12,9 @@
 #include <pthread.h>
 #include <prng.h>
 
-#ifndef TRIALS_PER_THREAD
-	#define TRIALS_PER_THREAD 4096
-#endif
+
+int TRIALS_PER_THREAD = 4096;
+
 #define BLOCKS 256
 #define THREADS 256
 #define PI 3.1415926535  // known value of pi
@@ -176,6 +176,9 @@ int main (int argc, char *argv[]) {
 	real_t *dev;
 	curandState *devStates;
 
+	if(argc >1){
+		TRIALS_PER_THREAD = atoi(argv[1]);
+	}
 	
 	printf("# of trials per thread = %d, # of blocks = %d, # of threads/block = %d.\n", TRIALS_PER_THREAD,
 BLOCKS, THREADS);
@@ -209,12 +212,12 @@ BLOCKS, THREADS);
 	real_t pi_cpu_pthread;
 	int num_pthreads = 0;
 	random_generator_t rng_type = RAND;
-	if(argc >1){
-		num_pthreads = atoi(argv[1]);
-		if(argc >2){
-			if(strcmp(argv[2],"RAND")){
+	if(argc >2){
+		num_pthreads = atoi(argv[2]);
+		if(argc >3){
+			if(strcmp(argv[3],"RAND")){
 				rng_type = RAND;
-			}else if(strcmp(argv[2],"PRNG")){
+			}else if(strcmp(argv[3],"PRNG")){
 				printf("PRNG Not Supported at the moment. reverting to RAND\n");
 				rng_type = PRNG;
 			}else{
