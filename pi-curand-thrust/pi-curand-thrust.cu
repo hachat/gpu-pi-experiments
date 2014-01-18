@@ -2,8 +2,10 @@
 
 #include <thrust/iterator/counting_iterator.h>
 #include <thrust/functional.h>
+#include <thrust/device_vector.h>
 #include <thrust/transform_reduce.h>
 #include <curand_kernel.h>
+
 
 #include <iostream>
 #include <iomanip>
@@ -26,11 +28,15 @@ int TRIALS_PER_THREAD = 4096;
 struct estimate_pi : 
     public thrust::unary_function<unsigned int, real_t>
 {
+  const int trials_per_thread;
+
+  estimate_pi(int _trials_per_thread) : trials_per_thread(_trials_per_thread){}
+
   __device__
   real_t operator()(unsigned int thread_id)
   {
     real_t sum = 0;
-    unsigned int N = TRIALS_PER_THREAD; // samples per thread
+    unsigned int N = trials_per_thread; // samples per thread
 
     unsigned int seed = thread_id;
 
@@ -69,8 +75,10 @@ int main(int argc, char *argv[])
   clock_t start, stop;
   
   if(argc > 1){
-    TRIALS_PER_THREAD = atoi(argv[1])
+    TRIALS_PER_THREAD = atoi(argv[1]);
+
   }
+
   std::cout << "# of trials per thread = "<< TRIALS_PER_THREAD <<" # of blocks * # of threads/block = " 
             << BLOCKS*THREADS << std::endl;
 
@@ -79,7 +87,7 @@ int main(int argc, char *argv[])
   real_t estimate = thrust::transform_reduce(
         thrust::counting_iterator<int>(0),
         thrust::counting_iterator<int>(M),
-        estimate_pi(),
+        estimate_pi(TRIALS_PER_THREAD),
         0.0f,
         thrust::plus<real_t>());
   estimate /= M;

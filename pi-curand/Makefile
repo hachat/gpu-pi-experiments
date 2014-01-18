@@ -118,7 +118,7 @@ INCLUDES      := -I$(CUDA_INC_PATH) -I. -I./../lib
 
 DEFINES ?=
 
-.PHONEY: dp sp
+.PHONY: dp sp
 
 # Target rules
 all: build

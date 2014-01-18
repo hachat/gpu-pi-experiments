@@ -33,19 +33,19 @@ __device__ float my_rand(unsigned int *seed) {
         return ((float)x)/m;
 }
 
-__global__ void gpu_monte_carlo(real_t *estimate) {
+__global__ void gpu_monte_carlo(int trials_per_thread, real_t *estimate) {
 	unsigned int tid = threadIdx.x + blockDim.x * blockIdx.x;
 	int points_in_circle = 0;
 	real_t x, y;
 
 	unsigned int seed =  tid + 1;  // starting number in random sequence
 
-	for(int i = 0; i < TRIALS_PER_THREAD; i++) {
+	for(int i = 0; i < trials_per_thread; i++) {
 		x = my_rand(&seed);
 		y = my_rand(&seed);
 		points_in_circle += (x*x + y*y <= 1.0f); // count if x & y is in the circle.
 	}
-	estimate[tid] = 4.0f * points_in_circle / (real_t) TRIALS_PER_THREAD; // return estimate of pi
+	estimate[tid] = 4.0f * points_in_circle / (real_t) trials_per_thread; // return estimate of pi
 }
 
 real_t host_monte_carlo(long trials) {
@@ -75,7 +75,7 @@ BLOCKS, THREADS);
 
 	cudaMalloc((void **) &dev, BLOCKS * THREADS * sizeof(real_t)); // allocate device mem. for counts
 
-	gpu_monte_carlo<<<BLOCKS, THREADS>>>(dev);
+	gpu_monte_carlo<<<BLOCKS, THREADS>>>(TRIALS_PER_THREAD,dev);
 
 	cudaMemcpy(host, dev, BLOCKS * THREADS * sizeof(real_t), cudaMemcpyDeviceToHost); // return results 
 

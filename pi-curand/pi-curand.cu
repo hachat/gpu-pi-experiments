@@ -25,7 +25,7 @@ int TRIALS_PER_THREAD = 4096;
 	typedef float real_t;
 #endif
 	
-__global__ void gpu_monte_carlo(real_t *estimate, curandState *states) {
+__global__ void gpu_monte_carlo(int tries_per_thread, real_t *estimate, curandState *states) {
 	unsigned int tid = threadIdx.x + blockDim.x * blockIdx.x;
 	int points_in_circle = 0;
 	real_t x, y;
@@ -33,12 +33,12 @@ __global__ void gpu_monte_carlo(real_t *estimate, curandState *states) {
 	curand_init(1234, tid, 0, &states[tid]);  // 	Initialize CURAND
 
 
-	for(int i = 0; i < TRIALS_PER_THREAD; i++) {
+	for(int i = 0; i < tries_per_thread; i++) {
 		x = curand_uniform (&states[tid]);
 		y = curand_uniform (&states[tid]);
 		points_in_circle += (x*x + y*y <= 1.0f); // count if x & y is in the circle.
 	}
-	estimate[tid] = 4.0f * points_in_circle / (real_t) TRIALS_PER_THREAD; // return estimate of pi
+	estimate[tid] = 4.0f * points_in_circle / (real_t) tries_per_thread; // return estimate of pi
 }
 
 real_t host_monte_carlo(long trials) {
@@ -189,7 +189,7 @@ BLOCKS, THREADS);
 	
 	cudaMalloc( (void **)&devStates, THREADS * BLOCKS * sizeof(curandState) );
 
-	gpu_monte_carlo<<<BLOCKS, THREADS>>>(dev, devStates);
+	gpu_monte_carlo<<<BLOCKS, THREADS>>>(TRIALS_PER_THREAD, dev, devStates);
 
 	cudaMemcpy(host, dev, BLOCKS * THREADS * sizeof(real_t), cudaMemcpyDeviceToHost); // return results 
 
