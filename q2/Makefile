@@ -132,6 +132,10 @@ sp: build
 
 #10^8, 5 * 10^8, 10^9
 
+.PHONY: sp-1e7
+sp-1e7: DEFINES+= -DN=10000000
+sp-1e7: build
+
 .PHONY: sp-1e8
 sp-1e8: DEFINES+= -DN=100000000
 sp-1e8: build
@@ -143,6 +147,12 @@ sp-5e8: build
 .PHONY: sp-1e9
 sp-1e9: DEFINES+= -DN=1000000000
 sp-1e9: build
+
+
+.PHONY: dp-1e7
+dp-1e7: DEFINES+= -DDP -DN=10000000
+dp-1e7: build
+
 
 .PHONY: dp-1e8
 dp-1e8: DEFINES+= -DDP -DN=100000000

@@ -14,12 +14,16 @@
 	typedef float real_t;
 #endif
 	
-#define BLOCKS 256
-#define THREADS 256
+#define min(x,y) (x<y?x:y)
 
 #ifndef N
 #define N 10000000
 #endif
+
+#define THREADS 256
+
+//smallest multiple of threadsPerBlock that is greater than or equal to N
+#define BLOCKS min(256,(N+THREADS-1)/THREADS)
 
 
 
@@ -30,8 +34,7 @@
     real_t h_B[N];
 
     // Allocate the host output vector C
-    real_t h_C[BLOCKS * THREADS];
-
+    real_t h_C[BLOCKS];
 
 //can specify N to be x at compile-time as: gcc -DN=x
 
@@ -54,21 +57,47 @@ float elapsed_time_msec(struct timespec *begin, struct timespec *end, unsigned l
  * number of elements numElements.
  */
 __global__ void
-vectorMultiply(const real_t *A, const real_t *B, real_t *C, long int numElements)
+vectorMultiply(const real_t *A, const real_t *B, real_t *C)
 {
-    int i = blockDim.x * blockIdx.x + threadIdx.x;
 
-    if (i < numElements)
-    {
-        C[i] += A[i] * B[i];
-    }
+    unsigned long data_index = blockDim.x * blockIdx.x + threadIdx.x;
+	unsigned long block_sum_index = threadIdx.x;
+	// This keeps the sum from each thread within the block
+	__shared__ real_t blockSums[THREADS];
+
+	real_t threadSum = 0;
+
+	while ( data_index < N )
+	{
+		threadSum += A[data_index] * B[data_index];
+		data_index += blockDim.x * gridDim.x;
+	}
+	blockSums[threadIdx.x] = threadSum;
+
+	__syncthreads();
+
+	long i = block_sum_index/2;
+	//Two by two iterative reduction 
+	while (i!=0){
+		if(block_sum_index < i){
+			//Lower half
+			blockSums[block_sum_index] += blockSums[block_sum_index + i] ;
+		}
+		__syncthreads();
+
+		i = i/2;
+	}
+
+	if(block_sum_index == 0){
+		C[blockIdx.x] = blockSums[0];
+	}
 }
 
-real_t host_vectorMultiply(const real_t *A, const real_t *B, long int numElements){
-	long int i = 0;
+real_t host_vectorMultiply(const real_t *A, const real_t *B){
+	long i = 0;
 	real_t dotProduct = 0.0f;
 
-	if (i < numElements)
+	if (i < N)
     {
         dotProduct += A[i] * B[i];
     }
@@ -78,9 +107,9 @@ real_t host_vectorMultiply(const real_t *A, const real_t *B, long int numElement
 int main(int argc, char **argv)
 {
 	int numthreads = 1;
-	struct timespec t0, t1, t2,t1_host,t2_host;
+	struct timespec t1_gpu, t2_gpu, t1_host, t2_host;
 	unsigned long sec, nsec;
-	float comp_time,host_time; // in milli seconds
+	float host_time,gpu_time; // in milli seconds
 
 
    int pflag = 0;
@@ -127,7 +156,6 @@ int main(int argc, char **argv)
    }
    
 
-	GET_TIME(t0);
 	// do initializations, setting-up etc
 	
 	// Error code to check return values for CUDA calls
@@ -137,34 +165,125 @@ int main(int argc, char **argv)
     printf("[Vector multiplication of %ld elements using %d blocks %d threads per block]\n", (long)N,BLOCKS,THREADS);
 
     // Initialize the host input vectors
-    for (int i = 0; i < N; ++i)
+    for (int i = 0; i < N; i++)
     {
-        h_A[i] = 1 + rand()/(float)RAND_MAX;
-        h_B[i] = 1 + rand()/(float)RAND_MAX;
+        h_A[i] = 1.0f;//1 + rand()/(float)RAND_MAX;
+        h_B[i] = 1.0f;//1 + rand()/(float)RAND_MAX;
     }
-    // Initialize the host input vectors
-    for (int i = 0; i < BLOCKS * THREADS; ++i)
-    {
-        h_C[i] = 0.0f;
-    }
+    
 
-
-	GET_TIME(t1);
+    GET_TIME(t1_gpu);
 	// do computation
-	GET_TIME(t2);
+	
+	cudaSetDevice(1);
+
+    // Allocate the device input vector A
+    float *d_A = NULL;
+    err = cudaMalloc((void **)&d_A, size);
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to allocate device vector A (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+    // Allocate the device input vector B
+    float *d_B = NULL;
+    err = cudaMalloc((void **)&d_B, size);
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to allocate device vector B (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+    // Allocate the device output vector C
+    float *d_C = NULL;
+    err = cudaMalloc((void **)&d_C, BLOCKS * sizeof(real_t));
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to allocate device vector C (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+	// Copy the host input vectors A and B in host memory to the device input vectors in
+    // device memory
+    printf("Copy input data from the host memory to the CUDA device\n");
+    err = cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to copy vector A from host to device (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+    err = cudaMemcpy(d_B, h_B, size, cudaMemcpyHostToDevice);
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to copy vector B from host to device (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+	vectorMultiply<<<BLOCKS, THREADS>>>((const real_t *)d_A,(const real_t *)d_B,(real_t *)d_C);
+
+
+	err = cudaMemcpy ( h_C , d_C , BLOCKS * sizeof(real_t) , cudaMemcpyDeviceToHost ) ;
+
+	if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to copy vector C from device to host (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+    real_t gpu_dotProduct = 0.0f;
+
+	for (int i = 0; i < BLOCKS; i++)
+    {
+        gpu_dotProduct += h_C[i];
+    }
+
+
+	GET_TIME(t2_gpu);
 
 	GET_TIME(t1_host);
-    real_t host_dotProduct = host_vectorMultiply((const real_t *)&h_A,(const real_t *)&h_B,N);
+    real_t host_dotProduct = host_vectorMultiply((const real_t *)&h_A,(const real_t *)&h_B);
 	GET_TIME(t2_host);
 	host_time = elapsed_time_msec(&t1_host, &t2_host, &sec, &nsec);
 	
-	comp_time = elapsed_time_msec(&t1, &t2, &sec, &nsec);
-	printf("N=%ld: Threads=%d: Time(ms)=%.2f \n", (long)N, numthreads, comp_time);
+	gpu_time = elapsed_time_msec(&t1_gpu, &t2_gpu, &sec, &nsec);
+	printf("N=%ld: Threads=%d: Time(ms)=%.2f \n", (long)N, numthreads, gpu_time);
 	
 	printf("CPU Serial dotProduct: %lf\n",host_dotProduct);
 	printf("CPU Serial Time(ms)=%.2f \n", host_time);
 	
+	printf("GPU Serial dotProduct: %lf\n",gpu_dotProduct);
+	printf("GPU Serial Time(ms)=%.2f \n", gpu_time);
+	
 	// finishing stuff
+	// Free device global memory
+    err = cudaFree(d_A);
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to free device vector A (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+    err = cudaFree(d_B);
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to free device vector B (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+    err = cudaFree(d_C);
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to free device vector C (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
 
     // Reset the device and exit
     err = cudaDeviceReset();
