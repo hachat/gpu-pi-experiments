@@ -4,6 +4,7 @@
 #include <getopt.h>	// for getopt( )
 #include <ctype.h>	//for isprint( )
 
+
 #define GET_TIME(x); if (clock_gettime(CLOCK_MONOTONIC, &(x)) < 0) \
 						{ perror("clock_gettime( ):"); exit(EXIT_FAILURE); }
 
@@ -73,10 +74,11 @@ vectorMultiply(const real_t *A, const real_t *B, real_t *C)
 		data_index += blockDim.x * gridDim.x;
 	}
 	blockSums[threadIdx.x] = threadSum;
-
+	//printf("BlockID: %d ThreadID: %d threadSum: %lf\n",blockIdx.x , threadIdx.x,threadSum);
+	
 	__syncthreads();
 
-	long i = block_sum_index/2;
+	long i = blockDim.x/2;
 	//Two by two iterative reduction 
 	while (i!=0){
 		if(block_sum_index < i){
@@ -97,7 +99,7 @@ real_t host_vectorMultiply(const real_t *A, const real_t *B){
 	long i = 0;
 	real_t dotProduct = 0.0f;
 
-	if (i < N)
+	for(i = 0;i < N; i++)
     {
         dotProduct += A[i] * B[i];
     }
@@ -167,15 +169,15 @@ int main(int argc, char **argv)
     // Initialize the host input vectors
     for (int i = 0; i < N; i++)
     {
-        h_A[i] = 1.0f;//1 + rand()/(float)RAND_MAX;
-        h_B[i] = 1.0f;//1 + rand()/(float)RAND_MAX;
+        h_A[i] = 1 + rand()/(float)RAND_MAX;
+        h_B[i] = 1 + rand()/(float)RAND_MAX;
     }
     
 
     GET_TIME(t1_gpu);
 	// do computation
 	
-	cudaSetDevice(1);
+	//cudaSetDevice(1);
 
     // Allocate the device input vector A
     float *d_A = NULL;
@@ -242,6 +244,7 @@ int main(int argc, char **argv)
 	for (int i = 0; i < BLOCKS; i++)
     {
         gpu_dotProduct += h_C[i];
+        printf("BlockID:%d : BlockSum:%lf\n",i,h_C[i]);
     }
 
 
@@ -258,8 +261,8 @@ int main(int argc, char **argv)
 	printf("CPU Serial dotProduct: %lf\n",host_dotProduct);
 	printf("CPU Serial Time(ms)=%.2f \n", host_time);
 	
-	printf("GPU Serial dotProduct: %lf\n",gpu_dotProduct);
-	printf("GPU Serial Time(ms)=%.2f \n", gpu_time);
+	printf("GPU dotProduct: %lf\n",gpu_dotProduct);
+	printf("GPU Time(ms)=%.2f \n", gpu_time);
 	
 	// finishing stuff
 	// Free device global memory
