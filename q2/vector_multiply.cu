@@ -21,10 +21,10 @@
 #define N 10000000
 #endif
 
-#define THREADS 256
+#define THREADS 512
 
 //smallest multiple of threadsPerBlock that is greater than or equal to N
-#define BLOCKS min(256,(N+THREADS-1)/THREADS)
+#define BLOCKS min(32,(N+THREADS-1)/THREADS)
 
 
 
@@ -57,6 +57,7 @@ float elapsed_time_msec(struct timespec *begin, struct timespec *end, unsigned l
  * Computes the vector multiplication of A and B. The two vectors have the same
  * number of elements numElements.
  */
+ //http://cuda-programming.blogspot.in/2013/01/vector-dot-product-in-cuda-c-cuda-c.html
 __global__ void
 vectorMultiply(const real_t *A, const real_t *B, real_t *C)
 {
