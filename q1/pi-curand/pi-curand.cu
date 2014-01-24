@@ -10,7 +10,7 @@
 #include <time.h>
 #include <curand_kernel.h>
 #include <pthread.h>
-#include <prng.h>
+//#include <prng.h>
 
 #define CSV_OUTPUT
 

@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
   }
 
     #ifdef CSV_OUTPUT
-      std::cout << "[THRUST],precision,trials/thread,blocks,threads/block,gpu-pi-time,gpu-pi,gpu-error,\n");
+      std::cout << "[THRUST],precision,trials/thread,blocks,threads/block,gpu-pi-time,gpu-pi,gpu-error," << std::endl;
       std::cout << "[THRUST],";
       
     #ifdef DP
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
   #ifdef CSV_OUTPUT
     std::cout << elapsed_time << ",";
     std::cout << estimate << ",";
-    std::cout << error << ",\n";
+    std::cout << error << "," << std::endl;
   #else
 
     std::cout << "THRUST pi calculated in " << elapsed_time << " s."<< std::endl;

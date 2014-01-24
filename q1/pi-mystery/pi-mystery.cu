@@ -20,8 +20,7 @@ int NBIN = 4096;
 	typedef float real_t;
 #endif
 
-int tid;
-real_t pi_gpu = 0;
+
 
 // Kernel that executes on the CUDA device
 __global__ void cal_pi(real_t *sum, int nbin, real_t step, int nthreads, int nblocks) {
@@ -52,6 +51,7 @@ real_t host_monte_carlo(long trials) {
 int main(int argc,char *argv[]) {
 	clock_t start, stop;
 	
+	int tid;
 
 	if(argc >1){
 		NBIN = atoi(argv[1]);
@@ -89,9 +89,13 @@ int main(int argc,char *argv[]) {
 	cal_pi <<<dimGrid, dimBlock>>> (sumDev, NBIN, step, NUM_THREAD, NUM_BLOCK); // call CUDA kernel
 	// Retrieve result from device and store it in host array
 	cudaMemcpy(sumHost, sumDev, size, cudaMemcpyDeviceToHost);
-	for(tid=0; tid<NUM_THREAD*NUM_BLOCK; tid++)
+
+	real_t pi_gpu = 0.0f;
+
+	for(tid=0; tid<NUM_THREAD*NUM_BLOCK; tid++){
 		pi_gpu += sumHost[tid];
-	pi_gpu *= step;
+	}
+	pi_gpu *= step/2;
 
 	stop = clock();
 	// Print results

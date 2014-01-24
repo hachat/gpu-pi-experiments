@@ -89,10 +89,10 @@ ifneq ($(DARWIN),)
       CCFLAGS   := -arch $(OS_ARCH) 
 else
   ifeq ($(OS_SIZE),32)
-      LDFLAGS   :=  -L./../lib -lprng -L$(CUDA_LIB_PATH) -lcuda -lcudart 
+      LDFLAGS   := -L$(CUDA_LIB_PATH) -lcuda -lcudart 
       CCFLAGS   := -m32
   else
-      LDFLAGS   := -L./../lib -lprng -L$(CUDA_LIB_PATH) -lcuda -lcudart
+      LDFLAGS   := -L$(CUDA_LIB_PATH) -lcuda -lcudart
       CCFLAGS   := -m64
   endif
 endif

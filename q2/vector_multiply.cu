@@ -3,6 +3,7 @@
 #include <errno.h>	// for perror( )
 #include <getopt.h>	// for getopt( )
 #include <ctype.h>	//for isprint( )
+#include <pthread.h>
 
 
 #define GET_TIME(x); if (clock_gettime(CLOCK_MONOTONIC, &(x)) < 0) \
@@ -26,6 +27,10 @@
 //smallest multiple of threadsPerBlock that is greater than or equal to N
 #define BLOCKS min(32,(N+THREADS-1)/THREADS)
 
+typedef struct{
+    int thread_id;
+    long int ncount;
+}try_arg_t;
 
 
     // Allocate the host input vector A
@@ -101,6 +106,42 @@ real_t host_vectorMultiply(const real_t *A, const real_t *B){
 	real_t dotProduct = 0.0f;
 
 	for(i = 0;i < N; i++)
+    {
+        dotProduct += A[i] * B[i];
+    }
+    return dotProduct;
+} 
+
+real_t host_pthread_vectorMultiply(int num_pthreads,const real_t *A, const real_t *B){
+    long i = 0;
+    long tries_per_pthread = 0;
+    long t;
+    int rc;
+    pthread_t *threads;
+    pthread_attr_t attr;
+    try_arg_t *try_args;
+    void * status;
+    real_t pi_pthreads;
+
+
+    real_t dotProduct = 0.0f;
+
+    try_args = (try_arg_t *)malloc(num_pthreads*sizeof(try_arg_t));
+    if(try_args == NULL){
+        printf("ERROR; return malloc failed for try_args");
+    }
+    threads = (pthread_t *)malloc(num_pthreads*sizeof(pthread_t));  //  Allocate pthreads
+    if(threads == NULL){
+        printf("ERROR; return malloc failed for threads");
+    }
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
+    tries_per_pthread = trials / num_pthreads;
+
+
+
+
+    for(i = 0;i < N; i++)
     {
         dotProduct += A[i] * B[i];
     }
