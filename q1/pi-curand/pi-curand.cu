@@ -12,6 +12,8 @@
 #include <pthread.h>
 #include <prng.h>
 
+#define CSV_OUTPUT
+
 
 int TRIALS_PER_THREAD = 4096;
 
@@ -180,8 +182,27 @@ int main (int argc, char *argv[]) {
 		TRIALS_PER_THREAD = atoi(argv[1]);
 	}
 	
-	printf("# of trials per thread = %d, # of blocks = %d, # of threads/block = %d.\n", TRIALS_PER_THREAD,
-BLOCKS, THREADS);
+	#ifdef CSV_OUTPUT
+			if(argc >2){
+				printf("[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,pthread-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,pthread-pi,pthread-error,pthread-count,\n");
+			}
+			else{
+				printf("[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,\n");	
+			}
+			printf("[CURAND],");
+
+		#ifdef DP
+			printf("dp,");
+		#else
+			printf("sp,");
+		#endif
+			printf("%d,",TRIALS_PER_THREAD);
+			printf("%d,",BLOCKS);
+			printf("%d,",THREADS);
+	#else
+	printf("# of trials per thread = %d, # of blocks = %d, # of threads/block = %d.\n", TRIALS_PER_THREAD, BLOCKS, THREADS);
+	#endif
+
 
 	start = clock();
 
@@ -202,12 +223,20 @@ BLOCKS, THREADS);
 
 	stop = clock();
 
-	printf("GPU pi calculated in %f s.\n", (stop-start)/(float)CLOCKS_PER_SEC);
-
+	#ifdef CSV_OUTPUT
+		printf("%f,",(stop-start)/(float)CLOCKS_PER_SEC);
+	#else
+		printf("GPU pi calculated in %f s.\n", (stop-start)/(float)CLOCKS_PER_SEC);
+	#endif
 	start = clock();
 	real_t pi_cpu = host_monte_carlo(BLOCKS * THREADS * TRIALS_PER_THREAD);
 	stop = clock();
-	printf("CPU pi calculated in %f s.\n", (stop-start)/(float)CLOCKS_PER_SEC);
+
+	#ifdef CSV_OUTPUT
+		printf("%f,",(stop-start)/(float)CLOCKS_PER_SEC);
+	#else
+		printf("CPU pi calculated in %f s.\n", (stop-start)/(float)CLOCKS_PER_SEC);
+	#endif
 
 	real_t pi_cpu_pthread;
 	int num_pthreads = 0;
@@ -227,14 +256,34 @@ BLOCKS, THREADS);
 		start = clock();
 		pi_cpu_pthread = host_pthread_monte_carlo(BLOCKS * THREADS * TRIALS_PER_THREAD,num_pthreads,rng_type);
 		stop = clock();
-		printf("CPU Pthread pi calculated in %f s. Used %d threads.\n", (stop-start)/(float)CLOCKS_PER_SEC,num_pthreads);
+
+		#ifdef CSV_OUTPUT
+			printf("%f,",(stop-start)/(float)CLOCKS_PER_SEC);
+			
+		#else
+			printf("CPU Pthread pi calculated in %f s. Used %d threads.\n", (stop-start)/(float)CLOCKS_PER_SEC,num_pthreads);
+		#endif
 	}
 
+	#ifdef CSV_OUTPUT
+			printf("%f,",pi_gpu);
+			printf("%f,",pi_gpu - PI);
+			printf("%f,",pi_cpu);
+			printf("%f,",pi_cpu - PI);
+			
+	#else
 
-	printf("CUDA estimate of PI = %f [error of %f]\n", pi_gpu, pi_gpu - PI);
-	printf("CPU estimate of PI = %f [error of %f]\n", pi_cpu, pi_cpu - PI);
-	if(argc >1){
-		printf("CPU pthread estimate of PI = %f [error of %f]\n", pi_cpu_pthread, pi_cpu_pthread - PI);
+		printf("CUDA estimate of PI = %f [error of %f]\n", pi_gpu, pi_gpu - PI);
+		printf("CPU estimate of PI = %f [error of %f]\n", pi_cpu, pi_cpu - PI);
+	#endif
+	if(argc >2){
+		#ifdef CSV_OUTPUT
+			printf("%f,",pi_cpu_pthread);
+			printf("%f,",pi_cpu_pthread - PI);
+			printf("%d,\n",num_pthreads);
+		#else
+			printf("CPU pthread estimate of PI = %f [error of %f]\n", pi_cpu_pthread, pi_cpu_pthread - PI);
+		#endif
 	}
 	return 0;
 }

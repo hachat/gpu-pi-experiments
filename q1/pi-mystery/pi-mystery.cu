@@ -6,6 +6,7 @@
 #include <cuda.h>
 #include <time.h>
 
+#define CSV_OUTPUT
 
 int NBIN = 4096;
 
@@ -60,8 +61,21 @@ int main(int argc,char *argv[]) {
 	dim3 dimBlock(NUM_THREAD,1,1);  // Block dimensions
 	real_t *sumHost, *sumDev;  // Pointer to host & device arrays
 
-	printf("# of trials per thread = %d, # of blocks = %d, # of threads/block = %d.\n", NBIN,
-NUM_BLOCK, NUM_THREAD);
+	#ifdef CSV_OUTPUT
+			printf("[MYSTERY],precision,nbins,blocks,threads/block,gpu-pi-time,cpu-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,\n");
+			printf("[MYSTERY],");
+
+		#ifdef DP
+			printf("dp,");
+		#else
+			printf("sp,");
+		#endif
+			printf("%d,",NBIN);
+			printf("%d,",NUM_BLOCK);
+			printf("%d,",NUM_THREAD);
+	#else
+		printf("# of trials per thread = %d, # of blocks = %d, # of threads/block = %d.\n", NBIN,NUM_BLOCK, NUM_THREAD);
+	#endif
 
 	start = clock();
 
@@ -81,8 +95,11 @@ NUM_BLOCK, NUM_THREAD);
 
 	stop = clock();
 	// Print results
-	printf("GPU pi calculated in %f s.\n", (stop-start)/(float)CLOCKS_PER_SEC);
-
+	#ifdef CSV_OUTPUT
+		printf("%f,",(stop-start)/(float)CLOCKS_PER_SEC);
+	#else
+		printf("GPU pi calculated in %f s.\n", (stop-start)/(float)CLOCKS_PER_SEC);
+	#endif
 	// Cleanup
 	free(sumHost); 
 	cudaFree(sumDev);
@@ -90,10 +107,24 @@ NUM_BLOCK, NUM_THREAD);
 	start = clock();
 	real_t pi_cpu = host_monte_carlo(NUM_BLOCK * NUM_THREAD * NBIN);
 	stop = clock();
-	printf("CPU pi calculated in %f s.\n", (stop-start)/(float)CLOCKS_PER_SEC);
-
-	printf("CUDA estimate of PI = %f [error of %f]\n", pi_gpu, pi_gpu - PI);
-	printf("CPU estimate of PI = %f [error of %f]\n", pi_cpu, pi_cpu - PI);
 	
+	#ifdef CSV_OUTPUT
+		printf("%f,",(stop-start)/(float)CLOCKS_PER_SEC);
+	#else
+		printf("CPU pi calculated in %f s.\n", (stop-start)/(float)CLOCKS_PER_SEC);
+	#endif
+
+	#ifdef CSV_OUTPUT
+			printf("%f,",pi_gpu);
+			printf("%f,",pi_gpu - PI);
+			printf("%f,",pi_cpu);
+			printf("%f,\n",pi_cpu - PI);
+			
+	#else
+
+		printf("CUDA estimate of PI = %f [error of %f]\n", pi_gpu, pi_gpu - PI);
+		printf("CPU estimate of PI = %f [error of %f]\n", pi_cpu, pi_cpu - PI);
+	#endif
+
 	return 0;
 }

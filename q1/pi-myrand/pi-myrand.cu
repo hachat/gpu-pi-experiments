@@ -9,6 +9,10 @@
 #include <math.h>
 #include <time.h>
 
+
+#define CSV_OUTPUT
+
+
 int TRIALS_PER_THREAD = 4096;
 
 #define BLOCKS 256
@@ -68,9 +72,22 @@ int main (int argc, char *argv[]) {
 		TRIALS_PER_THREAD = atoi(argv[1]);
 	}
 	
+	#ifdef CSV_OUTPUT
+			printf("[MYRAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,\n");
+			printf("[MYRAND],");
+
+		#ifdef DP
+			printf("dp,");
+		#else
+			printf("sp,");
+		#endif
+			printf("%d,",TRIALS_PER_THREAD);
+			printf("%d,",BLOCKS);
+			printf("%d,",THREADS);
+	#else
 	printf("# of trials per thread = %d, # of blocks = %d, # of threads/block = %d.\n", TRIALS_PER_THREAD,
 BLOCKS, THREADS);
-
+	#endif
 	start = clock();
 
 	cudaMalloc((void **) &dev, BLOCKS * THREADS * sizeof(real_t)); // allocate device mem. for counts
@@ -88,15 +105,31 @@ BLOCKS, THREADS);
 
 	stop = clock();
 
-	printf("GPU pi calculated in %f s.\n", (stop-start)/(float)CLOCKS_PER_SEC);
-
+	#ifdef CSV_OUTPUT
+		printf("%f,",(stop-start)/(float)CLOCKS_PER_SEC);
+	#else
+		printf("GPU pi calculated in %f s.\n", (stop-start)/(float)CLOCKS_PER_SEC);
+	#endif
 	start = clock();
 	real_t pi_cpu = host_monte_carlo(BLOCKS * THREADS * TRIALS_PER_THREAD);
 	stop = clock();
-	printf("CPU pi calculated in %f s.\n", (stop-start)/(float)CLOCKS_PER_SEC);
+	#ifdef CSV_OUTPUT
+		printf("%f,",(stop-start)/(float)CLOCKS_PER_SEC);
+	#else
+		printf("CPU pi calculated in %f s.\n", (stop-start)/(float)CLOCKS_PER_SEC);
+	#endif
 
-	printf("CUDA estimate of PI = %f [error of %f]\n", pi_gpu, pi_gpu - PI);
-	printf("CPU estimate of PI = %f [error of %f]\n", pi_cpu, pi_cpu - PI);
-	
+	#ifdef CSV_OUTPUT
+			printf("%f,",pi_gpu);
+			printf("%f,",pi_gpu - PI);
+			printf("%f,",pi_cpu);
+			printf("%f,\n",pi_cpu - PI);
+			
+	#else
+
+		printf("CUDA estimate of PI = %f [error of %f]\n", pi_gpu, pi_gpu - PI);
+		printf("CPU estimate of PI = %f [error of %f]\n", pi_cpu, pi_cpu - PI);
+	#endif
+
 	return 0;
 }

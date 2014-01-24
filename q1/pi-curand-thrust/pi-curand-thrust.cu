@@ -12,6 +12,10 @@
 
 #include <time.h>
 
+
+#define CSV_OUTPUT
+
+
 // we could vary M & N to find the perf sweet spot
 int TRIALS_PER_THREAD = 4096;
 
@@ -79,8 +83,22 @@ int main(int argc, char *argv[])
 
   }
 
+    #ifdef CSV_OUTPUT
+      std::cout << "[THRUST],precision,trials/thread,blocks,threads/block,gpu-pi-time,gpu-pi,gpu-error,\n");
+      std::cout << "[THRUST],";
+      
+    #ifdef DP
+      std::cout << "dp,";
+    #else
+      std::cout << "sp,";
+    #endif
+      std::cout << TRIALS_PER_THREAD << ",";
+      std::cout << BLOCKS << ",";
+      std::cout << THREADS << ",";
+    #else
   std::cout << "# of trials per thread = "<< TRIALS_PER_THREAD <<" # of blocks * # of threads/block = " 
             << BLOCKS*THREADS << std::endl;
+   #endif
 
   start = clock();
 
@@ -97,10 +115,16 @@ int main(int argc, char *argv[])
   float error = estimate - PI;
 
   std::cout << std::setprecision(7);
-  std::cout << "THRUST pi calculated in " << elapsed_time << " s."<< std::endl;
 
-  std::cout << "CUDA estimate of PI = " << estimate << " [error of " << error << "]" << std::endl;
-  
+  #ifdef CSV_OUTPUT
+    std::cout << elapsed_time << ",";
+    std::cout << estimate << ",";
+    std::cout << error << ",\n";
+  #else
+
+    std::cout << "THRUST pi calculated in " << elapsed_time << " s."<< std::endl;
+    std::cout << "CUDA estimate of PI = " << estimate << " [error of " << error << "]" << std::endl;
+  #endif
   return 0;
 }
 
