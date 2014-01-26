@@ -1,0 +1,15 @@
+pflag = 0, vflag = 0, cflag = 0
+[Vector multiplication of 10000000 elements using 32 blocks 512 threads per block]
+Copy input data from the host memory to the CUDA device
+N=10000000: Threads=1: Time(ms)=91.89 
+CPU Serial dotProduct: 22558174.000000
+CPU Serial Time(ms)=10.69 
+GPU dotProduct: 22501276.000000
+GPU Time(ms)=91.89 
+CPU pthread dotProduct(2threads): 22499188.000000
+CPU pthread Time(ms)=10.59 
+CPU pthread dotProduct(4threads): 22500564.000000
+CPU pthread Time(ms)=5.99 
+CPU pthread dotProduct(8threads): 22501346.000000
+CPU pthread Time(ms)=5.78 
+Done

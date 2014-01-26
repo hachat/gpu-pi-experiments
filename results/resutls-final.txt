@@ -1,0 +1,116 @@
+rm -f pi-curand pi-curand.o 
+/usr/local/cuda-5.0/bin/nvcc -m64 -O3 -arch sm_13  -I/usr/local/cuda-5.0/include -I. -I./../lib -o pi-curand.o -c pi-curand.cu
+g++ -m64 -o pi-curand pi-curand.o -L/usr/local/cuda-5.0/lib64 -lcuda -lcudart 
+mkdir -p ../../bin/linux/release
+cp pi-curand ../../bin/linux/release
+[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,pthread-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,pthread-pi,pthread-error,pthread-count,
+[CURAND],sp,256,256,256,0.600000,0.580000,7.270000,3.141898,0.000305,3.141441,-0.000151,3.141831,0.000238,2,
+[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,pthread-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,pthread-pi,pthread-error,pthread-count,
+[CURAND],sp,1024,256,256,0.190000,2.410000,23.959999,3.141390,-0.000202,3.141401,-0.000192,3.141725,0.000132,2,
+[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,pthread-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,pthread-pi,pthread-error,pthread-count,
+[CURAND],sp,4096,256,256,0.530000,9.550000,76.550003,3.141582,-0.000011,3.141581,-0.000012,3.141528,-0.000065,2,
+[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,pthread-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,pthread-pi,pthread-error,pthread-count,
+[CURAND],sp,256,256,256,0.100000,0.610000,20.740000,3.141898,0.000305,3.141441,-0.000151,3.141657,0.000064,4,
+[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,pthread-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,pthread-pi,pthread-error,pthread-count,
+[CURAND],sp,1024,256,256,0.190000,2.380000,86.260002,3.141390,-0.000202,3.141401,-0.000192,3.141817,0.000224,4,
+[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,pthread-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,pthread-pi,pthread-error,pthread-count,
+[CURAND],sp,4096,256,256,0.530000,9.470000,343.239990,3.141582,-0.000011,3.141581,-0.000012,3.141585,-0.000007,4,
+[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,pthread-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,pthread-pi,pthread-error,pthread-count,
+[CURAND],sp,256,256,256,0.090000,0.620000,37.590000,3.141898,0.000305,3.141441,-0.000151,3.142076,0.000484,8,
+[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,pthread-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,pthread-pi,pthread-error,pthread-count,
+[CURAND],sp,1024,256,256,0.180000,2.390000,138.339996,3.141390,-0.000202,3.141401,-0.000192,3.141636,0.000044,8,
+[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,pthread-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,pthread-pi,pthread-error,pthread-count,
+[CURAND],sp,4096,256,256,0.530000,9.460000,523.619995,3.141582,-0.000011,3.141581,-0.000012,3.141469,-0.000124,8,
+rm -f pi-curand pi-curand.o 
+/usr/local/cuda-5.0/bin/nvcc -m64 -O3 -arch sm_13 -D DP -I/usr/local/cuda-5.0/include -I. -I./../lib -o pi-curand.o -c pi-curand.cu
+g++ -m64 -o pi-curand pi-curand.o -L/usr/local/cuda-5.0/lib64 -lcuda -lcudart 
+mkdir -p ../../bin/linux/release
+cp pi-curand ../../bin/linux/release
+[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,pthread-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,pthread-pi,pthread-error,pthread-count,
+[CURAND],dp,256,256,256,0.620000,0.580000,5.390000,3.141898,0.000305,3.141441,-0.000151,3.141663,0.000070,2,
+[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,pthread-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,pthread-pi,pthread-error,pthread-count,
+[CURAND],dp,1024,256,256,0.180000,2.290000,22.070000,3.141394,-0.000199,3.141400,-0.000192,3.141928,0.000336,2,
+[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,pthread-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,pthread-pi,pthread-error,pthread-count,
+[CURAND],dp,4096,256,256,0.540000,9.180000,88.220001,3.141576,-0.000017,3.141581,-0.000012,3.141532,-0.000061,2,
+[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,pthread-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,pthread-pi,pthread-error,pthread-count,
+[CURAND],dp,256,256,256,0.110000,0.590000,21.219999,3.141898,0.000305,3.141441,-0.000151,3.141980,0.000387,4,
+[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,pthread-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,pthread-pi,pthread-error,pthread-count,
+[CURAND],dp,1024,256,256,0.180000,2.350000,75.540001,3.141394,-0.000199,3.141400,-0.000192,3.141673,0.000081,4,
+[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,pthread-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,pthread-pi,pthread-error,pthread-count,
+[CURAND],dp,4096,256,256,0.540000,9.140000,347.940002,3.141576,-0.000017,3.141581,-0.000012,3.141466,-0.000126,4,
+[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,pthread-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,pthread-pi,pthread-error,pthread-count,
+[CURAND],dp,256,256,256,0.090000,0.600000,34.380001,3.141898,0.000305,3.141441,-0.000151,3.141887,0.000295,8,
+[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,pthread-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,pthread-pi,pthread-error,pthread-count,
+[CURAND],dp,1024,256,256,0.180000,2.330000,155.110001,3.141394,-0.000199,3.141400,-0.000192,3.141960,0.000367,8,
+[CURAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,pthread-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,pthread-pi,pthread-error,pthread-count,
+[CURAND],dp,4096,256,256,0.530000,9.160000,601.729980,3.141576,-0.000017,3.141581,-0.000012,3.141516,-0.000077,8,
+rm -f pi-curand pi-curand.o 
+rm -f pi-mystery pi-mystery.o 
+/usr/local/cuda-5.0/bin/nvcc -m64 -O3 -arch sm_13  -I/usr/local/cuda-5.0/include -I. -o pi-mystery.o -c pi-mystery.cu
+g++ -m64 -o pi-mystery pi-mystery.o -L/usr/local/cuda-5.0/lib64 -lcuda -lcudart 
+mkdir -p ../../bin/linux/release
+cp pi-mystery ../../bin/linux/release
+[MYSTERY],precision,nbins,blocks,threads/block,gpu-pi-time,cpu-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,
+[MYSTERY],sp,256,256,256,0.070000,0.560000,3.141411,-0.000182,3.141441,-0.000151,
+[MYSTERY],precision,nbins,blocks,threads/block,gpu-pi-time,cpu-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,
+[MYSTERY],sp,1024,256,256,0.060000,2.270000,3.141540,-0.000053,3.141401,-0.000192,
+[MYSTERY],precision,nbins,blocks,threads/block,gpu-pi-time,cpu-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,
+[MYSTERY],sp,4096,256,256,0.080000,9.000000,3.141483,-0.000110,3.141581,-0.000012,
+rm -f pi-mystery pi-mystery.o 
+/usr/local/cuda-5.0/bin/nvcc -m64 -O3 -arch sm_13 -D DP -I/usr/local/cuda-5.0/include -I. -o pi-mystery.o -c pi-mystery.cu
+g++ -m64 -o pi-mystery pi-mystery.o -L/usr/local/cuda-5.0/lib64 -lcuda -lcudart 
+mkdir -p ../../bin/linux/release
+cp pi-mystery ../../bin/linux/release
+[MYSTERY],precision,nbins,blocks,threads/block,gpu-pi-time,cpu-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,
+[MYSTERY],dp,256,256,256,0.090000,0.570000,3.141562,-0.000031,3.141441,-0.000151,
+[MYSTERY],precision,nbins,blocks,threads/block,gpu-pi-time,cpu-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,
+[MYSTERY],dp,1024,256,256,0.050000,2.330000,3.141562,-0.000031,3.141400,-0.000192,
+[MYSTERY],precision,nbins,blocks,threads/block,gpu-pi-time,cpu-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,
+[MYSTERY],dp,4096,256,256,0.090000,9.180000,3.141562,-0.000031,3.141581,-0.000012,
+rm -f pi-mystery pi-mystery.o 
+rm -f pi-myrand pi-myrand.o 
+/usr/local/cuda-5.0/bin/nvcc -m64 -O3 -arch sm_13  -I/usr/local/cuda-5.0/include -I. -o pi-myrand.o -c pi-myrand.cu
+g++ -m64 -o pi-myrand pi-myrand.o -L/usr/local/cuda-5.0/lib64 -lcuda -lcudart 
+mkdir -p ../../bin/linux/release
+cp pi-myrand ../../bin/linux/release
+[MYRAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,
+[MYRAND],sp,256,256,256,0.070000,0.570000,3.144249,0.002657,3.141441,-0.000151,
+[MYRAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,
+[MYRAND],sp,1024,256,256,0.060000,2.290000,3.139517,-0.002076,3.141401,-0.000192,
+[MYRAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,
+[MYRAND],sp,4096,256,256,0.120000,9.020000,3.141507,-0.000085,3.141581,-0.000012,
+rm -f pi-myrand pi-myrand.o 
+/usr/local/cuda-5.0/bin/nvcc -m64 -O3 -arch sm_13 -D DP -I/usr/local/cuda-5.0/include -I. -o pi-myrand.o -c pi-myrand.cu
+g++ -m64 -o pi-myrand pi-myrand.o -L/usr/local/cuda-5.0/lib64 -lcuda -lcudart 
+mkdir -p ../../bin/linux/release
+cp pi-myrand ../../bin/linux/release
+[MYRAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,
+[MYRAND],dp,256,256,256,0.070000,0.580000,3.144249,0.002657,3.141441,-0.000151,
+[MYRAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,
+[MYRAND],dp,1024,256,256,0.060000,2.300000,3.139507,-0.002085,3.141400,-0.000192,
+[MYRAND],precision,trials/thread,blocks,threads/block,gpu-pi-time,cpu-pi-time,gpu-pi,gpu-error,cpu-pi,cpu-error,
+[MYRAND],dp,4096,256,256,0.120000,9.180000,3.141498,-0.000095,3.141581,-0.000012,
+rm -f pi-myrand pi-myrand.o 
+rm -f pi-curand-thrust pi-curand-thrust.o 
+/usr/local/cuda-5.0/bin/nvcc -m64 -O3 -arch sm_13  -I/usr/local/cuda-5.0/include -I. -o pi-curand-thrust.o -c pi-curand-thrust.cu
+g++ -m64 -o pi-curand-thrust pi-curand-thrust.o -L/usr/local/cuda-5.0/lib64 -lcuda -lcudart 
+mkdir -p ../../bin/linux/release
+cp pi-curand-thrust ../../bin/linux/release
+[THRUST],precision,trials/thread,blocks,threads/block,gpu-pi-time,gpu-pi,gpu-error,
+[THRUST],sp,256,256,256,0.13,3.141484,-0.0001091082,
+[THRUST],precision,trials/thread,blocks,threads/block,gpu-pi-time,gpu-pi,gpu-error,
+[THRUST],sp,1024,256,256,0.05,3.141658,6.541421e-05,
+[THRUST],precision,trials/thread,blocks,threads/block,gpu-pi-time,gpu-pi,gpu-error,
+[THRUST],sp,4096,256,256,0.07,3.141579,-1.397918e-05,
+rm -f pi-curand-thrust pi-curand-thrust.o 
+/usr/local/cuda-5.0/bin/nvcc -m64 -O3 -arch sm_13 -D DP -I/usr/local/cuda-5.0/include -I. -o pi-curand-thrust.o -c pi-curand-thrust.cu
+g++ -m64 -o pi-curand-thrust pi-curand-thrust.o -L/usr/local/cuda-5.0/lib64 -lcuda -lcudart 
+mkdir -p ../../bin/linux/release
+cp pi-curand-thrust ../../bin/linux/release
+[THRUST],precision,trials/thread,blocks,threads/block,gpu-pi-time,gpu-pi,gpu-error,
+[THRUST],dp,256,256,256,0.16,3.141484,-0.0001091082,
+[THRUST],precision,trials/thread,blocks,threads/block,gpu-pi-time,gpu-pi,gpu-error,
+[THRUST],dp,1024,256,256,0.05,3.141658,6.565262e-05,
+[THRUST],precision,trials/thread,blocks,threads/block,gpu-pi-time,gpu-pi,gpu-error,
+[THRUST],dp,4096,256,256,0.07,3.141579,-1.374077e-05,
+rm -f pi-curand-thrust pi-curand-thrust.o 

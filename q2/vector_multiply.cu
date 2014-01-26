@@ -29,7 +29,11 @@
 
 typedef struct{
     int thread_id;
-    long int ncount;
+    int threadcount;
+    long totalLength;
+    real_t *threadSum;
+    const real_t *A;
+    const real_t *B;
 }try_arg_t;
 
 
@@ -112,16 +116,42 @@ real_t host_vectorMultiply(const real_t *A, const real_t *B){
     return dotProduct;
 } 
 
-real_t host_pthread_vectorMultiply(int num_pthreads,const real_t *A, const real_t *B){
+void * host_vectorMultiply_per_Thread(void * arg){
+    
+    try_arg_t *args = (try_arg_t *)arg;
+    int thread_id = args->thread_id;
+    int threadcount = args->threadcount;
+    long totalLength = args->totalLength;
+    real_t *threadSum = args->threadSum;
+    const real_t *A = args->A;
+    const real_t *B = args->B;
     long i = 0;
-    long tries_per_pthread = 0;
+    real_t dotProduct = 0.0f;
+
+    long begin = thread_id * (totalLength/threadcount);
+    long end  = (thread_id + 1) * (totalLength/threadcount);
+    if (end > N)
+    {
+        end = N;
+    }
+    for(i = begin;i < end; i++)
+    {
+        dotProduct += A[i] * B[i];
+    }
+    *threadSum = dotProduct;
+    //printf("thread :%d, from %ld to %ld : %f\n",thread_id,begin,end,dotProduct);
+    
+    return 0;
+} 
+
+real_t host_pthread_vectorMultiply(int num_pthreads,const real_t *A, const real_t *B){
     long t;
     int rc;
     pthread_t *threads;
     pthread_attr_t attr;
     try_arg_t *try_args;
     void * status;
-    real_t pi_pthreads;
+    real_t *threadSums;
 
 
     real_t dotProduct = 0.0f;
@@ -134,17 +164,44 @@ real_t host_pthread_vectorMultiply(int num_pthreads,const real_t *A, const real_
     if(threads == NULL){
         printf("ERROR; return malloc failed for threads");
     }
+    threadSums = (real_t *)malloc(num_pthreads*sizeof(real_t));  //  Allocate pthreads
+    if(threadSums == NULL){
+        printf("ERROR; return malloc failed for threadSums");
+    }
+
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
-    tries_per_pthread = trials / num_pthreads;
+    
+    for(t = 0; t < num_pthreads; t++){
+        try_args[t].thread_id = t;
+        try_args[t].threadcount = num_pthreads;
+        try_args[t].totalLength = N;
+        try_args[t].threadSum = &threadSums[t];
+        try_args[t].A = h_A;
+        try_args[t].B = h_B;
+        rc = pthread_create(&threads[t],&attr,host_vectorMultiply_per_Thread,(void *)&try_args[t]);
+        if(rc){
+            printf("ERROR; return code from pthread_create()\
+                 is %d\n", rc);
+            exit(-1);
+        }
 
-
-
-
-    for(i = 0;i < N; i++)
-    {
-        dotProduct += A[i] * B[i];
     }
+    pthread_attr_destroy(&attr);
+
+
+    dotProduct = 0.0f;
+    for(t = 0; t < num_pthreads; t++){
+        //printf("pthread_join: ThreadID:%d\n",t);
+        rc = pthread_join(threads[t], &status);
+        //printf("pthread_joined: ThreadID:%d\n",t);
+        
+        dotProduct += threadSums[t];
+    }
+
+    free(try_args);
+    free(threads);
+    free(threadSums);
     return dotProduct;
 } 
 
@@ -204,6 +261,7 @@ int main(int argc, char **argv)
 	
 	// Error code to check return values for CUDA calls
     cudaError_t err = cudaSuccess;
+
 
     size_t size = N * sizeof(real_t);
     printf("[Vector multiplication of %ld elements using %d blocks %d threads per block]\n", (long)N,BLOCKS,THREADS);
@@ -286,7 +344,7 @@ int main(int argc, char **argv)
 	for (int i = 0; i < BLOCKS; i++)
     {
         gpu_dotProduct += h_C[i];
-        printf("BlockID:%d : BlockSum:%lf\n",i,h_C[i]);
+        //printf("BlockID:%d : BlockSum:%lf\n",i,h_C[i]);
     }
 
 
@@ -300,12 +358,39 @@ int main(int argc, char **argv)
 	gpu_time = elapsed_time_msec(&t1_gpu, &t2_gpu, &sec, &nsec);
 	printf("N=%ld: Threads=%d: Time(ms)=%.2f \n", (long)N, numthreads, gpu_time);
 	
+
 	printf("CPU Serial dotProduct: %lf\n",host_dotProduct);
 	printf("CPU Serial Time(ms)=%.2f \n", host_time);
 	
-	printf("GPU dotProduct: %lf\n",gpu_dotProduct);
-	printf("GPU Time(ms)=%.2f \n", gpu_time);
-	
+    printf("GPU dotProduct: %lf\n",gpu_dotProduct);
+    printf("GPU Time(ms)=%.2f \n", gpu_time);
+    
+    real_t host_pthread_dotProduct;
+    
+    GET_TIME(t1_host);
+    host_pthread_dotProduct = host_pthread_vectorMultiply(2,(const real_t *)&h_A,(const real_t *)&h_B);
+    GET_TIME(t2_host);
+    host_time = elapsed_time_msec(&t1_host, &t2_host, &sec, &nsec);
+    
+    printf("CPU pthread dotProduct(2threads): %lf\n",host_pthread_dotProduct);
+    printf("CPU pthread Time(ms)=%.2f \n", host_time);
+    
+    GET_TIME(t1_host);
+    host_pthread_dotProduct = host_pthread_vectorMultiply(4,(const real_t *)&h_A,(const real_t *)&h_B);
+    GET_TIME(t2_host);
+    host_time = elapsed_time_msec(&t1_host, &t2_host, &sec, &nsec);
+    
+    printf("CPU pthread dotProduct(4threads): %lf\n",host_pthread_dotProduct);
+    printf("CPU pthread Time(ms)=%.2f \n", host_time);
+    
+    GET_TIME(t1_host);
+    host_pthread_dotProduct = host_pthread_vectorMultiply(8,(const real_t *)&h_A,(const real_t *)&h_B);
+    GET_TIME(t2_host);
+    host_time = elapsed_time_msec(&t1_host, &t2_host, &sec, &nsec);
+    
+    printf("CPU pthread dotProduct(8threads): %lf\n",host_pthread_dotProduct);
+    printf("CPU pthread Time(ms)=%.2f \n", host_time);
+    
 	// finishing stuff
 	// Free device global memory
     err = cudaFree(d_A);

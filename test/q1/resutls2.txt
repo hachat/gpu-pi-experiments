@@ -1,0 +1,45 @@
+rm -f pi-curand pi-curand.o 
+/usr/local/cuda-5.0/bin/nvcc -m64 -O3 -arch sm_13  -I/usr/local/cuda-5.0/include -I. -I./../lib -o pi-curand.o -c pi-curand.cu
+g++ -m64 -o pi-curand pi-curand.o -L./../lib -lprng -L/usr/local/cuda-5.0/lib64 -lcuda -lcudart 
+mkdir -p ../../bin/linux/release
+cp pi-curand ../../bin/linux/release
+# of trials per thread = 256, # of blocks = 256, # of threads/block = 256.
+GPU pi calculated in 0.590000 s.
+CPU pi calculated in 0.590000 s.
+CPU Pthread pi calculated in 6.230000 s. Used 2 threads.
+CUDA estimate of PI = 3.141898 [error of 0.000305]
+CPU estimate of PI = 3.141441 [error of -0.000151]
+CPU pthread estimate of PI = 3.141686 [error of 0.000094]
+SP===================
+# of trials per thread = 1024, # of blocks = 256, # of threads/block = 256.
+GPU pi calculated in 0.190000 s.
+CPU pi calculated in 2.450000 s.
+CPU Pthread pi calculated in 28.270000 s. Used 2 threads.
+CUDA estimate of PI = 3.141390 [error of -0.000202]
+CPU estimate of PI = 3.141401 [error of -0.000192]
+CPU pthread estimate of PI = 3.141886 [error of 0.000293]
+SP===================
+# of trials per thread = 4096, # of blocks = 256, # of threads/block = 256.
+GPU pi calculated in 0.540000 s.
+CPU pi calculated in 9.600000 s.
+CPU Pthread pi calculated in 93.989998 s. Used 2 threads.
+CUDA estimate of PI = 3.141582 [error of -0.000011]
+CPU estimate of PI = 3.141581 [error of -0.000012]
+CPU pthread estimate of PI = 3.141454 [error of -0.000139]
+SP===================
+# of trials per thread = 256, # of blocks = 256, # of threads/block = 256.
+GPU pi calculated in 0.100000 s.
+CPU pi calculated in 0.610000 s.
+CPU Pthread pi calculated in 21.700001 s. Used 4 threads.
+CUDA estimate of PI = 3.141898 [error of 0.000305]
+CPU estimate of PI = 3.141441 [error of -0.000151]
+CPU pthread estimate of PI = 3.142342 [error of 0.000749]
+SP===================
+# of trials per thread = 1024, # of blocks = 256, # of threads/block = 256.
+GPU pi calculated in 0.180000 s.
+CPU pi calculated in 2.400000 s.
+CPU Pthread pi calculated in 75.410004 s. Used 4 threads.
+CUDA estimate of PI = 3.141390 [error of -0.000202]
+CPU estimate of PI = 3.141401 [error of -0.000192]
+CPU pthread estimate of PI = 3.141850 [error of 0.000257]
+SP===================

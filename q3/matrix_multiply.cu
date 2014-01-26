@@ -4,7 +4,6 @@
 #include <getopt.h>	// for getopt( )
 #include <ctype.h>	//for isprint( )
 
-
 #define GET_TIME(x); if (clock_gettime(CLOCK_MONOTONIC, &(x)) < 0) \
 						{ perror("clock_gettime( ):"); exit(EXIT_FAILURE); }
 
@@ -22,6 +21,7 @@
 #endif
 
 #define THREADS 512
+#define TILE_DIM 32
 
 //smallest multiple of threadsPerBlock that is greater than or equal to N
 #define BLOCKS min(32,(N*N+THREADS-1)/THREADS)
@@ -36,6 +36,9 @@ real_t h_B[N*N];
 
 // Allocate the host output matrix C. Results Row Major
 real_t h_C[N*N];
+
+// Allocate the output matrix Cd copied from device. Results Row Major
+real_t h_Cd[N*N];
 
 //can specify N to be x at compile-time as: gcc -DN=x
 
@@ -136,50 +139,35 @@ __global__ void matrixMultiply(int dim, const real_t *A, const real_t *B, real_t
     }
 }
 
+//Kernel taken from http://www.orangeowlsolutions.com/archives/526
+__global__ void MatMul(real_t* A, real_t* B, real_t* C, int ARows, int ACols, int BRows, int BCols, int CRows, int CCols) {
 
- __global__ void tiledMatrixMultiply(int dim, const real_t *A,const real_t *B, real_t *C) {
-         
-         float CValue = 0;
+  real_t CValue = 0; 
+  int Row = blockIdx.y*TILE_DIM + threadIdx.y;
+  int Col = blockIdx.x*TILE_DIM + threadIdx.x;
 
-         int row_index = blockIdx.y*blockDim.x + threadIdx.y;
-         int column_index = blockIdx.x*blockDim.x + threadIdx.x;
+  __shared__ real_t As[TILE_DIM][TILE_DIM];
+  __shared__ real_t Bs[TILE_DIM][TILE_DIM];
 
-         __shared__ real_t matA[THREADS*THREADS];
-         __shared__ real_t matB[THREADS*THREADS];
+    for (int k = 0; k < (TILE_DIM + ACols - 1)/TILE_DIM; k++) {
 
-         for (int k = 0; k < (blockDim.x + dim - 1)/blockDim.x; k++) {
-             if (k*blockDim.x + threadIdx.x < dim && row_index < dim){
+      if (k*TILE_DIM + threadIdx.x < ACols && Row < ARows) As[threadIdx.y][threadIdx.x] = A[Row*ACols + k*TILE_DIM + threadIdx.x];
+      else As[threadIdx.y][threadIdx.x] = 0.0;
 
-                     matA[threadIdx.y][threadIdx.x] = A[row_index*dim + k*blockDim.x + threadIdx.x];
-             }
-             else{
+      if (k*TILE_DIM + threadIdx.y < BRows && Col < BCols)  Bs[threadIdx.y][threadIdx.x] = B[(k*TILE_DIM + threadIdx.y)*BCols + Col];
+      else Bs[threadIdx.y][threadIdx.x] = 0.0;
 
-                     matA[threadIdx.y][threadIdx.x] = 0.0;
-             }
+      __syncthreads();
 
-             if (k*blockDim.x + threadIdx.y < dim && column_index < dim){
-                     
-                     matB[threadIdx.y][threadIdx.x] = B[(k*blockDim.x + threadIdx.y)*dim + column_index];
-             }
-             else{
+      for (int n = 0; n < TILE_DIM; ++n) CValue += As[threadIdx.y][n] * Bs[n][threadIdx.x];
 
-                     matB[threadIdx.y][threadIdx.x] = 0.0;
-             }
+      __syncthreads();
 
-             // Wait till all the threads finish before calculating the results
-             __syncthreads();
+  }
 
-             for (int n = 0; n < blockDim.x; ++n){
-                     CValue += matA[threadIdx.y][n] * matB[n][threadIdx.x];
-             }
-             __syncthreads();
-         }
+  if (Row < CRows && Col < CCols) C[((blockIdx.y * blockDim.y + threadIdx.y)*CCols)+(blockIdx.x*blockDim.x)+threadIdx.x]=CValue;
 
-        if (row_index < dim && column_index < dim){
-                 C[((blockIdx.y * blockDim.y + threadIdx.y)*dim) + (blockIdx.x*blockDim.x)+threadIdx.x]=CValue;
-        }
- }
-
+}
 
 int main(int argc, char **argv)
 {
@@ -243,8 +231,10 @@ int main(int argc, char **argv)
     cudaError_t err = cudaSuccess;
 
     size_t size = N * N * sizeof(real_t);
-    printf("[Matrix multiplication of %dx%d elements using %d blocks %d threads per block]\n", N,N,BLOCKS,THREADS);
 
+    if(!tflag){
+        printf("[Matrix multiplication of %dx%d elements using %d blocks %d threads per block]\n", N,N,BLOCKS,THREADS);
+    }
 
     host_matrixRandInitialize(N,h_A);
     host_matrixRandInitialize(N,h_B);
@@ -257,7 +247,7 @@ int main(int argc, char **argv)
 	//cudaSetDevice(1);
 
     // Allocate the device input vector A
-    float *d_A = NULL;
+    real_t *d_A = NULL;
     err = cudaMalloc((void **)&d_A, size);
 
     if (err != cudaSuccess)
@@ -267,7 +257,7 @@ int main(int argc, char **argv)
     }
 
     // Allocate the device input vector B
-    float *d_B = NULL;
+    real_t *d_B = NULL;
     err = cudaMalloc((void **)&d_B, size);
 
     if (err != cudaSuccess)
@@ -277,7 +267,7 @@ int main(int argc, char **argv)
     }
 
     // Allocate the device output vector C
-    float *d_C = NULL;
+    real_t *d_C = NULL;
     err = cudaMalloc((void **)&d_C, size);
 
     if (err != cudaSuccess)
@@ -306,13 +296,28 @@ int main(int argc, char **argv)
     }
 
     if(tflag){
-        tiledMatrixMultiply<<<BLOCKS, THREADS>>>(N, (const real_t *)d_A,(const real_t *)d_B,(real_t *)d_C);
+
+
+        // tile dimensions. Limitation: C [DIMX][DIMZ] = A [DIMX][DIMY] * B [DIMY][DIMZ] 
+
+        int CCols = N, CRows=N, ACols=N, ARows=N, BCols=N, BRows=N;
+
+        dim3 dimBlock(TILE_DIM, TILE_DIM, 1);
+        dim3 dimGrid;
+     
+        dimGrid.x = (CCols + dimBlock.x - 1)/dimBlock.x;
+        dimGrid.y = (CRows + dimBlock.y - 1)/dimBlock.y;
+ 
+        printf("[Matrix multiplication of %dx%d elements using %dx%d blocks %dx%d threads per block]\n", N,N,dimBlock.x,dimBlock.y,TILE_DIM,TILE_DIM);
+
+        MatMul<<<dimGrid , dimBlock>>>(d_A , d_B , d_C , ARows , ACols, BRows ,BCols , CRows , CCols);
+  
     }else{
 	   matrixMultiply<<<BLOCKS, THREADS>>>(N, (const real_t *)d_A,(const real_t *)d_B,(real_t *)d_C);        
     }
 
 
-	err = cudaMemcpy ( h_C , d_C , N * N * sizeof(real_t) , cudaMemcpyDeviceToHost ) ;
+	err = cudaMemcpy ( h_Cd , d_C , N * N * sizeof(real_t) , cudaMemcpyDeviceToHost ) ;
 
 	if (err != cudaSuccess)
     {
@@ -322,12 +327,14 @@ int main(int argc, char **argv)
 
 	GET_TIME(t2_gpu);
 
+
+
     //printf("(0,0) %.2f \n",h_C[0]);
     for(int i = 0;i < 10; i++)
     {
         for(int j = 0;j < 10; j++)
         {
-            printf("%.2f ",h_C[i*N + j]);
+            printf("%.2f ",h_Cd[i*N + j]);
         }
         printf("\n");
     }
@@ -345,6 +352,20 @@ int main(int argc, char **argv)
 	host_time = elapsed_time_msec(&t1_host, &t2_host, &sec, &nsec);
 	
 
+    if(vflag==1){
+    for (int i = 0; i<N; i++)
+    {
+        for (int j = 0; j<N; j++)
+        {
+            real_t error = h_Cd[i*N+j] - h_C[i*N+j];
+            if(error > 0.1 || error < -0.1)
+            {
+                printf("Matrix-matrix multiplication: unsuccessful... :-( \n");
+            }
+        }
+    }
+        printf("Verified results on +/-0.1 error margin\n");
+    }
     // printf("=====================");
     // for(int i = 0;i < N; i++)
     // {

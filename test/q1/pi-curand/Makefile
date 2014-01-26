@@ -74,8 +74,8 @@ NVCC            ?= $(CUDA_BIN_PATH)/nvcc
 GCC             ?= g++
 
 # Extra user flags
-EXTRA_NVCCFLAGS ?= -O3 -arch sm_21 -g -G
-EXTRA_LDFLAGS   ?= -O3 -g
+EXTRA_NVCCFLAGS ?= -O3 -arch sm_13
+EXTRA_LDFLAGS   ?= 
 
 # CUDA code generation flags
 GENCODE_SM10    := -gencode arch=compute_10,code=sm_10
@@ -89,7 +89,7 @@ ifneq ($(DARWIN),)
       CCFLAGS   := -arch $(OS_ARCH) 
 else
   ifeq ($(OS_SIZE),32)
-      LDFLAGS   := -L$(CUDA_LIB_PATH) -lcuda -lcudart
+      LDFLAGS   := -L$(CUDA_LIB_PATH) -lcuda -lcudart 
       CCFLAGS   := -m32
   else
       LDFLAGS   := -L$(CUDA_LIB_PATH) -lcuda -lcudart
@@ -114,85 +114,34 @@ else
 endif
 
 # Common includes and paths for CUDA
-INCLUDES      := -I$(CUDA_INC_PATH) -I.
+INCLUDES      := -I$(CUDA_INC_PATH) -I. -I./../lib
 
 DEFINES ?=
 
-
+.PHONY: dp sp
 
 # Target rules
 all: build
-	
-.PHONY: dp
+
+
 dp: DEFINES+= -D DP
 dp: build
-	
-.PHONY: sp
+
+#same as the default build
 sp: build
 
-#10^8, 5 * 10^8, 10^9
+build: pi-curand
 
-.PHONY: sp-600
-sp-600: DEFINES+= -DN=600
-sp-600: build
-
-.PHONY: sp-1200
-sp-1200: DEFINES+= -DN=1200
-sp-1200: build
-
-.PHONY: sp-1800
-sp-1800: DEFINES+= -DN=1800
-sp-1800: build
-
-.PHONY: sp-500
-sp-500: DEFINES+= -DN=500
-sp-500: build
-
-.PHONY: sp-1000
-sp-1000: DEFINES+= -DN=1000
-sp-1000: build
-
-.PHONY: sp-1500
-sp-1500: DEFINES+= -DN=1500
-sp-1500: build
-
-
-.PHONY: dp-600
-dp-600: DEFINES+= -DN=600
-dp-600: build
-
-.PHONY: dp-1200
-dp-1200: DEFINES+= -DDP -DN=1200
-dp-1200: build
-
-.PHONY: dp-1800
-dp-1800: DEFINES+= -DDP -DN=1800
-dp-1800: build
-
-.PHONY: dp-500
-dp-500: DEFINES+= -DDP -DN=500
-dp-500: build
-
-.PHONY: dp-1000
-dp-1000: DEFINES+= -DDP -DN=1000
-dp-1000: build
-
-.PHONY: dp-1500
-dp-1500: DEFINES+= -DDP -DN=1500
-dp-1500: build
-
-build: matrix_multiply
-
-matrix_multiply.o: matrix_multiply.cu
+pi-curand.o: pi-curand.cu
 	$(NVCC) $(CCFLAGS) $(EXTRA_NVCCFLAGS) $(DEFINES) $(INCLUDES) -o $@ -c $<
 
-matrix_multiply: matrix_multiply.o
+pi-curand: pi-curand.o
 	$(GCC) $(CCFLAGS) -o $@ $+ $(LDFLAGS) $(EXTRA_LDFLAGS)
 	mkdir -p ../../bin/$(OSLOWER)/$(TARGET)
 	cp $@ ../../bin/$(OSLOWER)/$(TARGET)
 
 run: build
-	../../bin/$(OSLOWER)/$(TARGET)/matrix_multiply
+	../../bin/$(OSLOWER)/$(TARGET)/pi-curand
 
 clean:
-	rm -f matrix_multiply matrix_multiply.o 
+	rm -f pi-curand pi-curand.o 
