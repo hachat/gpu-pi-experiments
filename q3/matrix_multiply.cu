@@ -62,8 +62,8 @@ void host_matrixRandInitialize(int dim, real_t *matrix)
             matrix[i*dim + j] = 0.0f;
             for(k = 0;k < dim; k++)
             {
-                //matrix[i*dim + j] = 1 + rand()/(float)RAND_MAX;
-                matrix[i*dim + j] = 1.0f;
+                matrix[i*dim + j] = 1 + rand()/(float)RAND_MAX;
+                //matrix[i*dim + j] = 1.0f;
             }
         }
     }
@@ -116,26 +116,25 @@ void * host_matrixMultiply_per_Thread(void * arg){
     //Each row is calculated by a thread
     long c_index = thread_id;
    
-    printf("Created thread: %d, dim:%ld\n",thread_id,dim);
+    //printf("Created thread: %d, dim:%ld\n",thread_id,dim);
 
     while(c_index < dim*dim){
         
-        printf("c_index: %ld\n",c_index);
+        //printf("c_index: %ld\n",c_index);
         
         long i=c_index/dim;
         long j = c_index % dim;
-        printf("c_index: %ld, i:%ld, j:%ld, Aval:%lf Bval:%lf\n",c_index,i,j,A[i*dim + 0],B[j]);
-
-        //C[c_index] = 0.0f;
-        printf("c_index: %ld, i:%ld, j:%ld, Aval:%lf Bval:%lf\n",c_index,i,j,A[i*dim + 0],B[j]);
+       
+        C[c_index] = 0.0f;
+        //printf("c_index: %ld, i:%ld, j:%ld, Aval:%lf Bval:%lf\n",c_index,i,j,A[i*dim + 0],B[j]);
 
         for(long k = 0; k < dim; k++){
-            printf("calculating index:%ld, i:%ld, j:%ld, k:%ld\n",c_index,i,j,k);
+            //printf("calculating index:%ld, i:%ld, j:%ld, k:%ld\n",c_index,i,j,k);
             C[c_index] += A[i*dim + k] * B[k*dim + j];
         }
         
         //If thread count is less than dim*dim, get another row
-        i += threadcount;
+        c_index += threadcount;
     }
     return 0;
 }
@@ -168,9 +167,9 @@ void host_pthread_MatrixMultiply(int num_pthreads, long dim, const real_t *A, co
         try_args[t].dim = dim;
         try_args[t].A = A;
         try_args[t].B = B;
-        try_args[t].B = C;
+        try_args[t].C = C;
         
-        printf("Creating thread:%ld\n",t);
+        //printf("Creating thread:%ld\n",t);
         rc = pthread_create(&threads[t],&attr,host_matrixMultiply_per_Thread,(void *)&try_args[t]);
         if(rc){
             printf("ERROR; return code from pthread_create()\
@@ -181,9 +180,9 @@ void host_pthread_MatrixMultiply(int num_pthreads, long dim, const real_t *A, co
     pthread_attr_destroy(&attr);
 
     for(t = 0; t < num_pthreads; t++){
-        //printf("pthread_join: ThreadID:%d\n",t);
+        //printf("pthread_join: ThreadID:%ld\n",t);
         rc = pthread_join(threads[t], &status);
-        //printf("pthread_joined: ThreadID:%d\n",t);
+        //printf("pthread_joined: ThreadID:%ld\n",t);
     }
 
     free(try_args);
@@ -279,15 +278,19 @@ int main(int argc, char **argv)
    int vflag = 0;
    int cflag = 0;
    int tflag = 0;
+   int gflag = 0;
    int index;
    int c;
 
    opterr = 0;
 
-   while ((c = getopt (argc, argv, "pvct")) != -1)
+   while ((c = getopt (argc, argv, "pvcgt")) != -1)
      switch (c)
        {
        case 'p':
+         pflag = 1;
+         break;
+       case 'g':
          pflag = 1;
          break;
        case 'v':
@@ -311,7 +314,7 @@ int main(int argc, char **argv)
          abort ();
        }
 
-   printf ("pflag = %d, vflag = %d, cflag = %d tflag = %d\n", pflag, vflag, cflag,tflag);
+   printf ("pflag = %d, vflag = %d, cflag = %d gflag = %d tflag = %d\n", pflag, vflag, cflag, gflag, tflag);
 
    for (index = optind; index < argc; index++){
      if(pflag!=0 && index == 2){
@@ -338,61 +341,61 @@ int main(int argc, char **argv)
     host_matrixRandInitialize(N,h_B);
     
     
+    if(gflag || tflag){
+        GET_TIME(t1_gpu);
+    	// do computation
+    	
+    	//cudaSetDevice(1);
 
-    GET_TIME(t1_gpu);
-	// do computation
-	
-	//cudaSetDevice(1);
+        // Allocate the device input vector A
+        real_t *d_A = NULL;
+        err = cudaMalloc((void **)&d_A, size);
 
-    // Allocate the device input vector A
-    real_t *d_A = NULL;
-    err = cudaMalloc((void **)&d_A, size);
+        if (err != cudaSuccess)
+        {
+            fprintf(stderr, "Failed to allocate device vector A (error code %s)!\n", cudaGetErrorString(err));
+            exit(EXIT_FAILURE);
+        }
 
-    if (err != cudaSuccess)
-    {
-        fprintf(stderr, "Failed to allocate device vector A (error code %s)!\n", cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
+        // Allocate the device input vector B
+        real_t *d_B = NULL;
+        err = cudaMalloc((void **)&d_B, size);
+
+        if (err != cudaSuccess)
+        {
+            fprintf(stderr, "Failed to allocate device vector B (error code %s)!\n", cudaGetErrorString(err));
+            exit(EXIT_FAILURE);
+        }
+
+        // Allocate the device output vector C
+        real_t *d_C = NULL;
+        err = cudaMalloc((void **)&d_C, size);
+
+        if (err != cudaSuccess)
+        {
+            fprintf(stderr, "Failed to allocate device vector C (error code %s)!\n", cudaGetErrorString(err));
+            exit(EXIT_FAILURE);
+        }
+
+    	// Copy the host input vectors A and B in host memory to the device input vectors in
+        // device memory
+        printf("Copy input data from the host memory to the CUDA device\n");
+        err = cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
+
+        if (err != cudaSuccess)
+        {
+            fprintf(stderr, "Failed to copy vector A from host to device (error code %s)!\n", cudaGetErrorString(err));
+            exit(EXIT_FAILURE);
+        }
+
+        err = cudaMemcpy(d_B, h_B, size, cudaMemcpyHostToDevice);
+
+        if (err != cudaSuccess)
+        {
+            fprintf(stderr, "Failed to copy vector B from host to device (error code %s)!\n", cudaGetErrorString(err));
+            exit(EXIT_FAILURE);
+        }
     }
-
-    // Allocate the device input vector B
-    real_t *d_B = NULL;
-    err = cudaMalloc((void **)&d_B, size);
-
-    if (err != cudaSuccess)
-    {
-        fprintf(stderr, "Failed to allocate device vector B (error code %s)!\n", cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
-    }
-
-    // Allocate the device output vector C
-    real_t *d_C = NULL;
-    err = cudaMalloc((void **)&d_C, size);
-
-    if (err != cudaSuccess)
-    {
-        fprintf(stderr, "Failed to allocate device vector C (error code %s)!\n", cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
-    }
-
-	// Copy the host input vectors A and B in host memory to the device input vectors in
-    // device memory
-    printf("Copy input data from the host memory to the CUDA device\n");
-    err = cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
-
-    if (err != cudaSuccess)
-    {
-        fprintf(stderr, "Failed to copy vector A from host to device (error code %s)!\n", cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
-    }
-
-    err = cudaMemcpy(d_B, h_B, size, cudaMemcpyHostToDevice);
-
-    if (err != cudaSuccess)
-    {
-        fprintf(stderr, "Failed to copy vector B from host to device (error code %s)!\n", cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
-    }
-
     if(tflag){
 
 
@@ -410,69 +413,72 @@ int main(int argc, char **argv)
 
         MatMul<<<dimGrid , dimBlock>>>(d_A , d_B , d_C , ARows , ACols, BRows ,BCols , CRows , CCols);
   
-    }else{
+    }else if (gflag){
 	   matrixMultiply<<<BLOCKS, THREADS>>>(N, (const real_t *)d_A,(const real_t *)d_B,(real_t *)d_C);        
     }
 
+    if(gflag || tflag){
+    	err = cudaMemcpy ( h_Cd , d_C , N * N * sizeof(real_t) , cudaMemcpyDeviceToHost ) ;
 
-	err = cudaMemcpy ( h_Cd , d_C , N * N * sizeof(real_t) , cudaMemcpyDeviceToHost ) ;
-
-	if (err != cudaSuccess)
-    {
-        fprintf(stderr, "Failed to copy vector C from device to host (error code %s)!\n", cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
-    }
-
-	GET_TIME(t2_gpu);
-
-    // finishing stuff
-    // Free device global memory
-    err = cudaFree(d_A);
-
-    if (err != cudaSuccess)
-    {
-        fprintf(stderr, "Failed to free device Matrix A (error code %s)!\n", cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
-    }
-    err = cudaFree(d_B);
-
-    if (err != cudaSuccess)
-    {
-        fprintf(stderr, "Failed to free device Matrix B (error code %s)!\n", cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
-    }
-    err = cudaFree(d_C);
-
-    if (err != cudaSuccess)
-    {
-        fprintf(stderr, "Failed to free device Matrix C (error code %s)!\n", cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
-    }
-
-    // Reset the device and exit
-    err = cudaDeviceReset();
-
-    if (err != cudaSuccess)
-    {
-        fprintf(stderr, "Failed to deinitialize the device! error=%s\n", cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
-    }
-    //released GPU
-
-
-
-
-    //printf("(0,0) %.2f \n",h_C[0]);
-    for(int i = 0;i < 10; i++)
-    {
-        for(int j = 0;j < 10; j++)
+    	if (err != cudaSuccess)
         {
-            printf("%.2f ",h_Cd[i*N + j]);
+            fprintf(stderr, "Failed to copy vector C from device to host (error code %s)!\n", cudaGetErrorString(err));
+            exit(EXIT_FAILURE);
         }
-        printf("\n");
-    }
 
-	GET_TIME(t1_host);
+    	GET_TIME(t2_gpu);
+
+        // finishing stuff
+        // Free device global memory
+        err = cudaFree(d_A);
+
+        if (err != cudaSuccess)
+        {
+            fprintf(stderr, "Failed to free device Matrix A (error code %s)!\n", cudaGetErrorString(err));
+            exit(EXIT_FAILURE);
+        }
+        err = cudaFree(d_B);
+
+        if (err != cudaSuccess)
+        {
+            fprintf(stderr, "Failed to free device Matrix B (error code %s)!\n", cudaGetErrorString(err));
+            exit(EXIT_FAILURE);
+        }
+        err = cudaFree(d_C);
+
+        if (err != cudaSuccess)
+        {
+            fprintf(stderr, "Failed to free device Matrix C (error code %s)!\n", cudaGetErrorString(err));
+            exit(EXIT_FAILURE);
+        }
+
+        // Reset the device and exit
+        err = cudaDeviceReset();
+
+        if (err != cudaSuccess)
+        {
+            fprintf(stderr, "Failed to deinitialize the device! error=%s\n", cudaGetErrorString(err));
+            exit(EXIT_FAILURE);
+        }
+        //released GPU
+
+
+
+
+        //printf("(0,0) %.2f \n",h_C[0]);
+        for(int i = 0;i < 10; i++)
+        {
+            for(int j = 0;j < 10; j++)
+            {
+                printf("%.2f ",h_Cd[i*N + j]);
+            }
+            printf("\n");
+        }
+
+
+    }
+   	GET_TIME(t1_host);
+
     if(tflag){
         //for tiling, initialized as regular
         host_matrixMultiply(N,0, (const real_t *)&h_A,(const real_t *)&h_B,(real_t *)&h_C);
@@ -485,7 +491,7 @@ int main(int argc, char **argv)
 	host_time = elapsed_time_msec(&t1_host, &t2_host, &sec, &nsec);
 	
 
-    if(vflag==1){
+    if(vflag==1 && (gflag || tflag)){
     for (int i = 0; i<N; i++)
     {
         for (int j = 0; j<N; j++)
@@ -518,29 +524,15 @@ int main(int argc, char **argv)
 	printf("GPU Time(ms)=%.2f \n", gpu_time);
 	
 
+    if(pflag == 1){
+        GET_TIME(t1_host);
+        host_pthread_MatrixMultiply(num_pthreads,N,(const real_t *)&h_A,(const real_t *)&h_B,(real_t *)&h_C);
+        GET_TIME(t2_host);
+        host_time = elapsed_time_msec(&t1_host, &t2_host, &sec, &nsec);
+        
+        printf("CPU pthread (%d threads) Time(ms)=%.2f \n",num_pthreads, host_time);
     
-    GET_TIME(t1_host);
-    host_pthread_MatrixMultiply(2,N,(const real_t *)&h_A,(const real_t *)&h_B,(real_t *)&h_C);
-    GET_TIME(t2_host);
-    host_time = elapsed_time_msec(&t1_host, &t2_host, &sec, &nsec);
-    
-    printf("CPU pthread (2threads) Time(ms)=%.2f \n", host_time);
-    
-    GET_TIME(t1_host);
-    host_pthread_MatrixMultiply(4,N,(const real_t *)&h_A,(const real_t *)&h_B,(real_t *)&h_C);
-    GET_TIME(t2_host);
-    host_time = elapsed_time_msec(&t1_host, &t2_host, &sec, &nsec);
-    
-    printf("CPU pthread (4threads) Time(ms)=%.2f \n", host_time);
-    
-    GET_TIME(t1_host);
-    host_pthread_MatrixMultiply(8,N,(const real_t *)&h_A,(const real_t *)&h_B,(real_t *)&h_C);
-    GET_TIME(t2_host);
-    host_time = elapsed_time_msec(&t1_host, &t2_host, &sec, &nsec);
-    
-    printf("CPU pthread (8threads) Time(ms)=%.2f \n", host_time);
-    
-
+    }
 
 	
     printf("Done\n");
