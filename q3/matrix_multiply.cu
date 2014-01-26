@@ -3,6 +3,7 @@
 #include <errno.h>	// for perror( )
 #include <getopt.h>	// for getopt( )
 #include <ctype.h>	//for isprint( )
+#include <pthread.h>
 
 #define GET_TIME(x); if (clock_gettime(CLOCK_MONOTONIC, &(x)) < 0) \
 						{ perror("clock_gettime( ):"); exit(EXIT_FAILURE); }
@@ -26,6 +27,14 @@
 //smallest multiple of threadsPerBlock that is greater than or equal to N
 #define BLOCKS min(32,(N*N+THREADS-1)/THREADS)
 
+typedef struct{
+    int thread_id;
+    int threadcount;
+    long dim;
+    const real_t *A;
+    const real_t *B;
+    real_t *C;
+}try_arg_t;
 
 
 // Allocate the host input matrix A. Initialize Raw major
@@ -93,6 +102,95 @@ void host_matrixMultiply(int dim,int use_transpose, const real_t *A, const real_
     }
     return;
 } 
+
+void * host_matrixMultiply_per_Thread(void * arg){
+    
+    try_arg_t *args = (try_arg_t *)arg;
+    int thread_id = args->thread_id;
+    int threadcount = args->threadcount;    
+    long dim = args->dim;
+    const real_t *A = args->A;
+    const real_t *B = args->B;
+    real_t *C = args->C;
+
+    //Each row is calculated by a thread
+    long c_index = thread_id;
+   
+    printf("Created thread: %d, dim:%ld\n",thread_id,dim);
+
+    while(c_index < dim*dim){
+        
+        printf("c_index: %ld\n",c_index);
+        
+        long i=c_index/dim;
+        long j = c_index % dim;
+        printf("c_index: %ld, i:%ld, j:%ld, Aval:%lf Bval:%lf\n",c_index,i,j,A[i*dim + 0],B[j]);
+
+        //C[c_index] = 0.0f;
+        printf("c_index: %ld, i:%ld, j:%ld, Aval:%lf Bval:%lf\n",c_index,i,j,A[i*dim + 0],B[j]);
+
+        for(long k = 0; k < dim; k++){
+            printf("calculating index:%ld, i:%ld, j:%ld, k:%ld\n",c_index,i,j,k);
+            C[c_index] += A[i*dim + k] * B[k*dim + j];
+        }
+        
+        //If thread count is less than dim*dim, get another row
+        i += threadcount;
+    }
+    return 0;
+}
+
+void host_pthread_MatrixMultiply(int num_pthreads, long dim, const real_t *A, const real_t *B, real_t *C){
+    long t;
+    int rc;
+    pthread_t *threads;
+    pthread_attr_t attr;
+    try_arg_t *try_args;
+    void * status;
+    
+    try_args = (try_arg_t *)malloc(num_pthreads*sizeof(try_arg_t));
+    if(try_args == NULL){
+        printf("ERROR; return malloc failed for try_args");
+    }
+    threads = (pthread_t *)malloc(num_pthreads*sizeof(pthread_t));  //  Allocate pthreads
+    if(threads == NULL){
+        printf("ERROR; return malloc failed for threads");
+    }
+
+    C[0] = 0.0f;
+
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
+    
+    for(t = 0; t < num_pthreads; t++){
+        try_args[t].thread_id = t;
+        try_args[t].threadcount = num_pthreads;
+        try_args[t].dim = dim;
+        try_args[t].A = A;
+        try_args[t].B = B;
+        try_args[t].B = C;
+        
+        printf("Creating thread:%ld\n",t);
+        rc = pthread_create(&threads[t],&attr,host_matrixMultiply_per_Thread,(void *)&try_args[t]);
+        if(rc){
+            printf("ERROR; return code from pthread_create()\
+                 is %d\n", rc);
+            exit(-1);
+        }
+    }
+    pthread_attr_destroy(&attr);
+
+    for(t = 0; t < num_pthreads; t++){
+        //printf("pthread_join: ThreadID:%d\n",t);
+        rc = pthread_join(threads[t], &status);
+        //printf("pthread_joined: ThreadID:%d\n",t);
+    }
+
+    free(try_args);
+    free(threads);
+    return;
+}
+
 
 float elapsed_time_msec(struct timespec *begin, struct timespec *end, unsigned long *sec, unsigned long *nsec){
     if (end->tv_nsec < begin->tv_nsec) {
@@ -327,6 +425,41 @@ int main(int argc, char **argv)
 
 	GET_TIME(t2_gpu);
 
+    // finishing stuff
+    // Free device global memory
+    err = cudaFree(d_A);
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to free device Matrix A (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+    err = cudaFree(d_B);
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to free device Matrix B (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+    err = cudaFree(d_C);
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to free device Matrix C (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+    // Reset the device and exit
+    err = cudaDeviceReset();
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to deinitialize the device! error=%s\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+    //released GPU
+
+
 
 
     //printf("(0,0) %.2f \n",h_C[0]);
@@ -384,39 +517,32 @@ int main(int argc, char **argv)
 	printf("CPU Serial Time(ms)=%.2f \n", host_time);
 	printf("GPU Time(ms)=%.2f \n", gpu_time);
 	
-	// finishing stuff
-	// Free device global memory
-    err = cudaFree(d_A);
 
-    if (err != cudaSuccess)
-    {
-        fprintf(stderr, "Failed to free device Matrix A (error code %s)!\n", cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
-    }
-    err = cudaFree(d_B);
+    
+    GET_TIME(t1_host);
+    host_pthread_MatrixMultiply(2,N,(const real_t *)&h_A,(const real_t *)&h_B,(real_t *)&h_C);
+    GET_TIME(t2_host);
+    host_time = elapsed_time_msec(&t1_host, &t2_host, &sec, &nsec);
+    
+    printf("CPU pthread (2threads) Time(ms)=%.2f \n", host_time);
+    
+    GET_TIME(t1_host);
+    host_pthread_MatrixMultiply(4,N,(const real_t *)&h_A,(const real_t *)&h_B,(real_t *)&h_C);
+    GET_TIME(t2_host);
+    host_time = elapsed_time_msec(&t1_host, &t2_host, &sec, &nsec);
+    
+    printf("CPU pthread (4threads) Time(ms)=%.2f \n", host_time);
+    
+    GET_TIME(t1_host);
+    host_pthread_MatrixMultiply(8,N,(const real_t *)&h_A,(const real_t *)&h_B,(real_t *)&h_C);
+    GET_TIME(t2_host);
+    host_time = elapsed_time_msec(&t1_host, &t2_host, &sec, &nsec);
+    
+    printf("CPU pthread (8threads) Time(ms)=%.2f \n", host_time);
+    
 
-    if (err != cudaSuccess)
-    {
-        fprintf(stderr, "Failed to free device Matrix B (error code %s)!\n", cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
-    }
-    err = cudaFree(d_C);
 
-    if (err != cudaSuccess)
-    {
-        fprintf(stderr, "Failed to free device Matrix C (error code %s)!\n", cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
-    }
-
-    // Reset the device and exit
-    err = cudaDeviceReset();
-
-    if (err != cudaSuccess)
-    {
-        fprintf(stderr, "Failed to deinitialize the device! error=%s\n", cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
-    }
-
+	
     printf("Done\n");
 
 

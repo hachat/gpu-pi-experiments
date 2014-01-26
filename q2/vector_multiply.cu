@@ -177,8 +177,8 @@ real_t host_pthread_vectorMultiply(int num_pthreads,const real_t *A, const real_
         try_args[t].threadcount = num_pthreads;
         try_args[t].totalLength = N;
         try_args[t].threadSum = &threadSums[t];
-        try_args[t].A = h_A;
-        try_args[t].B = h_B;
+        try_args[t].A = A;
+        try_args[t].B = B;
         rc = pthread_create(&threads[t],&attr,host_vectorMultiply_per_Thread,(void *)&try_args[t]);
         if(rc){
             printf("ERROR; return code from pthread_create()\
